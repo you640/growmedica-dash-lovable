@@ -10,12 +10,12 @@ export const Route = createFileRoute("/admin/ai")({
       phase="Fáza 3"
       icon={<Sparkles className="w-5 h-5" />}
       bullets={[
-        "Gemini ako primárny model, Mistral fallback",
+        "Mistral ako primárny LLM (mistral-large-latest)",
         "Akcie: optimalizácia produktov, hromadné updaty, exporty",
         "Pamäť kontextu medzi turnami",
         "Audit log všetkých AI akcií",
       ]}
-      cta={{ label: "Pripojiť Gemini v Nastaveniach", to: "/admin/nastavenia" }}
+      cta={{ label: "Pripojiť Mistral v Nastaveniach", to: "/admin/nastavenia" }}
     />
   ),
 });
