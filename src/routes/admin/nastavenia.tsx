@@ -415,22 +415,23 @@ const PROVIDER_SCHEMAS: Record<
       },
     ],
   },
-  google_ai: {
-    label: "Google AI / Gemini",
+  mistral_ai: {
+    label: "Mistral AI",
     description:
-      "Gemini je primárny LLM, Mistral fallback. API kľúče si nastavte v Lovable Cloud secretoch (GEMINI_API_KEY, MISTRAL_API_KEY). Tu konfigurujte modely a limity.",
+      "Mistral je primárny LLM pre celú platformu (SEO rewrite, agentic akcie, analytiku). API kľúč si nastavte ako MISTRAL_API_KEY v Lovable Cloud secretoch. Tu konfigurujte model a limity.",
     fields: [
       {
-        key: "gemini_model",
-        label: "Gemini model",
-        placeholder: "gemini-2.5-flash",
-      },
-      {
         key: "mistral_model",
-        label: "Mistral fallback model",
+        label: "Mistral model",
         placeholder: "mistral-large-latest",
       },
+      {
+        key: "mistral_small_model",
+        label: "Mistral small model (rýchle úlohy)",
+        placeholder: "mistral-small-latest",
+      },
       { key: "max_tokens", label: "Max tokens", placeholder: "2048" },
+      { key: "temperature", label: "Temperature", placeholder: "0.3" },
     ],
   },
   gcp: {
