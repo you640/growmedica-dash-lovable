@@ -11,7 +11,7 @@ export const Route = createFileRoute("/admin/produkty")({
       icon={<Package className="w-5 h-5" />}
       bullets={[
         "Live tabuľka produktov zo Shopify Admin API",
-        "AI drawer pre Gemini SEO rewrite (title, meta, popis)",
+        "AI drawer pre Mistral SEO rewrite (title, meta, popis)",
         "Bulk akcie a inline status toggle",
         "Sync metafields a kategórií",
       ]}
