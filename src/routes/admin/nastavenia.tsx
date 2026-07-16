@@ -711,6 +711,36 @@ function ResultRow({
   );
 }
 
+function StatusLine({
+  label,
+  ok,
+  okText,
+  badText,
+}: {
+  label: string;
+  ok: boolean;
+  okText: string;
+  badText: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-xs">
+      <span className="text-gm-text-muted">{label}</span>
+      <span
+        className={`inline-flex items-center gap-1 font-medium ${
+          ok ? "text-green-700" : "text-red-700"
+        }`}
+      >
+        {ok ? (
+          <CheckCircle2 className="w-3.5 h-3.5" />
+        ) : (
+          <XCircle className="w-3.5 h-3.5" />
+        )}
+        <span className="font-mono">{ok ? okText : badText}</span>
+      </span>
+    </div>
+  );
+}
+
 function CopyRow({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
