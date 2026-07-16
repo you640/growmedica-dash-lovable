@@ -51,12 +51,8 @@ export const getShopifyAuthStatus = createServerFn({ method: "POST" })
     const { normalizeStoreDomain, normalizeApiVersion, DEFAULT_API_VERSION } =
       await import("./shopify-client.server");
     const cfg = await loadNonSecretConfig();
-    const domain = normalizeStoreDomain(
-      cfg.store_domain || process.env.SHOPIFY_STORE_DOMAIN
-    );
-    const apiVersion = normalizeApiVersion(
-      cfg.api_version || process.env.SHOPIFY_API_VERSION
-    );
+    const domain = normalizeStoreDomain(cfg.store_domain || process.env.SHOPIFY_STORE_DOMAIN);
+    const apiVersion = normalizeApiVersion(cfg.api_version || process.env.SHOPIFY_API_VERSION);
     const hasClientId = !!process.env.SHOPIFY_CLIENT_ID?.trim();
     const hasClientSecret = !!process.env.SHOPIFY_CLIENT_SECRET?.trim();
     const hasLegacyAdminToken = !!process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim();
@@ -64,10 +60,10 @@ export const getShopifyAuthStatus = createServerFn({ method: "POST" })
       hasClientId && hasClientSecret
         ? "client_credentials"
         : hasClientId !== hasClientSecret
-        ? "partial"
-        : hasLegacyAdminToken
-        ? "legacy_admin_token"
-        : "none";
+          ? "partial"
+          : hasLegacyAdminToken
+            ? "legacy_admin_token"
+            : "none";
     return {
       domain,
       apiVersion,
@@ -76,7 +72,11 @@ export const getShopifyAuthStatus = createServerFn({ method: "POST" })
       hasClientSecret,
       hasLegacyAdminToken,
       authMode,
-      domainSource: cfg.store_domain ? "config" : process.env.SHOPIFY_STORE_DOMAIN ? "env" : "missing",
+      domainSource: cfg.store_domain
+        ? "config"
+        : process.env.SHOPIFY_STORE_DOMAIN
+          ? "env"
+          : "missing",
     };
   });
 
@@ -97,20 +97,13 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
     } = await import("./shopify-client.server");
 
     const cfg = await loadNonSecretConfig();
-    const domain = normalizeStoreDomain(
-      cfg.store_domain || process.env.SHOPIFY_STORE_DOMAIN
-    );
-    const apiVersion = normalizeApiVersion(
-      cfg.api_version || process.env.SHOPIFY_API_VERSION
-    );
+    const domain = normalizeStoreDomain(cfg.store_domain || process.env.SHOPIFY_STORE_DOMAIN);
+    const apiVersion = normalizeApiVersion(cfg.api_version || process.env.SHOPIFY_API_VERSION);
     const clientId = process.env.SHOPIFY_CLIENT_ID?.trim() ?? "";
     const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim() ?? "";
     const legacyToken = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim() ?? "";
 
-    const baseFail = (
-      error: string,
-      authMode: AuthMode = "none"
-    ): ShopifyTestResult => ({
+    const baseFail = (error: string, authMode: AuthMode = "none"): ShopifyTestResult => ({
       ok: false,
       domain,
       apiVersion,
@@ -125,9 +118,7 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
     });
 
     if (!domain) {
-      return baseFail(
-        "Neplatný Shopify store domain — očakávam bare *.myshopify.com hostname."
-      );
+      return baseFail("Neplatný Shopify store domain — očakávam bare *.myshopify.com hostname.");
     }
 
     const hasId = clientId.length > 0;
@@ -137,14 +128,12 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
     if (hasId !== hasSecret) {
       return baseFail(
         "SHOPIFY_CLIENT_ID a SHOPIFY_CLIENT_SECRET musia byť nastavené spolu.",
-        "partial"
+        "partial",
       );
     }
 
     let authMode: AuthMode;
-    let call: () => Promise<
-      Awaited<ReturnType<typeof adminGraphQL>>
-    >;
+    let call: () => Promise<Awaited<ReturnType<typeof adminGraphQL>>>;
 
     if (hasId && hasSecret) {
       authMode = "client_credentials";
@@ -168,7 +157,7 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
     } else {
       return baseFail(
         "Chýbajú Shopify credentials — nastavte SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET.",
-        "none"
+        "none",
       );
     }
 
@@ -188,16 +177,14 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
         };
       } else {
         const shop = r.json?.data?.shop ?? null;
-        const rawScopes = Array.isArray(
-          r.json?.data?.currentAppInstallation?.accessScopes
-        )
+        const rawScopes = Array.isArray(r.json?.data?.currentAppInstallation?.accessScopes)
           ? r.json.data.currentAppInstallation.accessScopes
           : [];
         const scopes: string[] = rawScopes
           .map((s: unknown) =>
             s && typeof s === "object" && "handle" in s
               ? String((s as { handle: unknown }).handle ?? "")
-              : ""
+              : "",
           )
           .filter((s: string) => s.length > 0);
         const missingScopes = REQUIRED_SCOPES.filter((s) => !scopes.includes(s));
@@ -209,10 +196,10 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
         const error = !versionOk
           ? `Shopify vrátil X-Shopify-API-Version="${apiVersionHeader ?? ""}", očakávané ${REQUIRED_API_VERSION}.`
           : missingScopes.length > 0
-          ? `Chýbajú scopes: ${missingScopes.join(", ")}`
-          : !shopName
-          ? "Admin API neposlalo shop.name."
-          : null;
+            ? `Chýbajú scopes: ${missingScopes.join(", ")}`
+            : !shopName
+              ? "Admin API neposlalo shop.name."
+              : null;
 
         result = {
           ok,
@@ -245,7 +232,7 @@ export const testShopifyConnection = createServerFn({ method: "POST" })
           last_tested_at: new Date().toISOString(),
           last_error: result.ok ? null : result.error,
         },
-        { onConflict: "provider,name" }
+        { onConflict: "provider,name" },
       );
     } catch (e) {
       console.error("[shopify:test:status-write]", {

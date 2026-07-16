@@ -8,10 +8,7 @@ import {
   upsertIntegrationConfig,
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
-import {
-  testShopifyConnection,
-  getShopifyAuthStatus,
-} from "@/lib/shopify.functions";
+import { testShopifyConnection, getShopifyAuthStatus } from "@/lib/shopify.functions";
 import {
   CheckCircle2,
   XCircle,
@@ -56,10 +53,10 @@ function StatusDot({ status }: { status?: string | null }) {
     status === "connected"
       ? "bg-green-500"
       : status === "error"
-      ? "bg-red-500"
-      : status === "testing"
-      ? "bg-yellow-500"
-      : "bg-gray-300";
+        ? "bg-red-500"
+        : status === "testing"
+          ? "bg-yellow-500"
+          : "bg-gray-300";
   return <span className={`inline-block w-2.5 h-2.5 rounded-full ${color}`} />;
 }
 
@@ -155,11 +152,7 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
     setSavedMsg(null);
     try {
       const config: Record<string, string> = { api_version: form.api_version };
-      for (const k of [
-        "store_domain",
-        "storefront_token",
-        "webhook_secret",
-      ] as const) {
+      for (const k of ["store_domain", "storefront_token", "webhook_secret"] as const) {
         if (form[k]) config[k] = form[k];
       }
       await upsert({
@@ -168,7 +161,9 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
       setSavedMsg("Uložené.");
       toast.success("Konfigurácia Shopify uložená.");
       onSaved();
-      authStatusFn().then(setAuthStatus).catch(() => undefined);
+      authStatusFn()
+        .then(setAuthStatus)
+        .catch(() => undefined);
     } catch (e) {
       setSavedMsg(`Chyba: ${(e as Error).message}`);
       toast.error(`Chyba: ${(e as Error).message}`);
@@ -199,12 +194,7 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
         shopName: null,
         myshopifyDomain: null,
         scopes: [],
-        missingScopes: [
-          "read_products",
-          "write_products",
-          "read_inventory",
-          "write_inventory",
-        ],
+        missingScopes: ["read_products", "write_products", "read_inventory", "write_inventory"],
         authMode: "none",
         error: (e as Error).message,
       } as TestResult);
@@ -214,17 +204,16 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
     }
   }
 
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "https://your-app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://your-app";
 
   return (
     <GlassPanel className="p-6 space-y-6">
       <div>
         <h2 className="text-lg font-semibold">Shopify</h2>
         <p className="text-sm text-gm-text-muted mt-1">
-          Admin API 2026-07 cez server-side client credentials. Client ID a
-          client secret sa nastavujú výlučne ako Lovable Cloud secrets — v UI
-          ich nikdy neukladáme ani nezobrazujeme. Storefront token je voliteľný.
+          Admin API 2026-07 cez server-side client credentials. Client ID a client secret sa
+          nastavujú výlučne ako Lovable Cloud secrets — v UI ich nikdy neukladáme ani nezobrazujeme.
+          Storefront token je voliteľný.
         </p>
       </div>
 
@@ -257,8 +246,7 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
             />
           </div>
           <div className="text-xs text-gm-text-muted">
-            Auth mode:{" "}
-            <span className="font-mono">{authStatus.authMode}</span>
+            Auth mode: <span className="font-mono">{authStatus.authMode}</span>
             {authStatus.authMode === "partial" && (
               <span className="ml-2 text-red-600">
                 Nastavené je iba jedno z ID/secret — fail closed.
@@ -316,9 +304,7 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
           {testing && <Loader2 className="w-4 h-4 animate-spin" />}
           Test pripojenia
         </button>
-        {savedMsg && (
-          <span className="text-sm text-gm-text-muted self-center">{savedMsg}</span>
-        )}
+        {savedMsg && <span className="text-sm text-gm-text-muted self-center">{savedMsg}</span>}
       </div>
 
       {result && (
@@ -356,8 +342,8 @@ function ShopifyCard({ onSaved }: { onSaved: () => void }) {
       <div className="border-t border-gm-border pt-4">
         <div className="text-sm font-medium">Webhook URL pre Shopify Admin</div>
         <p className="text-xs text-gm-text-muted mt-1">
-          Skopírujte túto URL do <i>Settings → Notifications → Webhooks</i> v Shopify.
-          Topics: products/*, orders/*, customers/*, inventory_levels/update, collections/*.
+          Skopírujte túto URL do <i>Settings → Notifications → Webhooks</i> v Shopify. Topics:
+          products/*, orders/*, customers/*, inventory_levels/update, collections/*.
         </p>
         <CopyRow value={`${origin}/api/public/webhooks/shopify`} />
       </div>
@@ -396,8 +382,8 @@ function LovableCloudCard() {
       <div>
         <h2 className="text-lg font-semibold">Lovable Cloud</h2>
         <p className="text-sm text-gm-text-muted mt-1">
-          Postgres + edge runtime sú zapnuté automaticky. Tabuľky: integrations,
-          webhook_endpoints, webhook_events, sync_jobs, shopify_product_cache.
+          Postgres + edge runtime sú zapnuté automaticky. Tabuľky: integrations, webhook_endpoints,
+          webhook_events, sync_jobs, shopify_product_cache.
         </p>
       </div>
 
@@ -434,8 +420,8 @@ function LovableCloudCard() {
                           e.status === "failed"
                             ? "text-red-600"
                             : e.status === "relayed"
-                            ? "text-green-600"
-                            : "text-gm-text-muted"
+                              ? "text-green-600"
+                              : "text-gm-text-muted"
                         }
                       >
                         {e.status}
@@ -548,13 +534,7 @@ const PROVIDER_SCHEMAS: Record<
   },
 };
 
-function GenericConfigCard({
-  providerId,
-  onSaved,
-}: {
-  providerId: string;
-  onSaved: () => void;
-}) {
+function GenericConfigCard({ providerId, onSaved }: { providerId: string; onSaved: () => void }) {
   const schema = PROVIDER_SCHEMAS[providerId];
   const upsert = useServerFn(upsertIntegrationConfig);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -591,23 +571,17 @@ function GenericConfigCard({
     <GlassPanel className="p-6 space-y-6">
       <div>
         <h2 className="text-lg font-semibold">{schema.label}</h2>
-        <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">
-          {schema.description}
-        </p>
+        <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">{schema.description}</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
         {schema.fields.map((f) =>
           f.textarea ? (
             <label key={f.key} className="block text-sm md:col-span-2">
-              <span className="text-xs uppercase tracking-wider text-gm-text-muted">
-                {f.label}
-              </span>
+              <span className="text-xs uppercase tracking-wider text-gm-text-muted">{f.label}</span>
               <textarea
                 value={form[f.key] ?? ""}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, [f.key]: e.target.value }))
-                }
+                onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={f.placeholder}
                 rows={6}
                 className="mt-1 w-full rounded-md border border-gm-border bg-white px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 ring-gm-primary/30"
@@ -620,11 +594,9 @@ function GenericConfigCard({
               placeholder={f.placeholder}
               secret={f.secret}
               value={form[f.key] ?? ""}
-              onChange={(v) =>
-                setForm((prev) => ({ ...prev, [f.key]: v }))
-              }
+              onChange={(v) => setForm((prev) => ({ ...prev, [f.key]: v }))}
             />
-          )
+          ),
         )}
       </div>
 
@@ -660,9 +632,7 @@ function Field({
   const [reveal, setReveal] = useState(false);
   return (
     <label className="block text-sm">
-      <span className="text-xs uppercase tracking-wider text-gm-text-muted">
-        {label}
-      </span>
+      <span className="text-xs uppercase tracking-wider text-gm-text-muted">{label}</span>
       <div className="mt-1 flex">
         <input
           type={secret && !reveal ? "password" : "text"}
@@ -685,21 +655,11 @@ function Field({
   );
 }
 
-function ResultRow({
-  label,
-  ok,
-  detail,
-}: {
-  label: string;
-  ok: boolean;
-  detail?: string;
-}) {
+function ResultRow({ label, ok, detail }: { label: string; ok: boolean; detail?: string }) {
   return (
     <div
       className={`rounded-md border px-3 py-2 ${
-        ok
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-red-200 bg-red-50 text-red-800"
+        ok ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-800"
       }`}
     >
       <div className="flex items-center gap-2 font-medium">
@@ -730,11 +690,7 @@ function StatusLine({
           ok ? "text-green-700" : "text-red-700"
         }`}
       >
-        {ok ? (
-          <CheckCircle2 className="w-3.5 h-3.5" />
-        ) : (
-          <XCircle className="w-3.5 h-3.5" />
-        )}
+        {ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
         <span className="font-mono">{ok ? okText : badText}</span>
       </span>
     </div>

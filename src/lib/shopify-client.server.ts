@@ -44,7 +44,7 @@ function cacheKey(domain: string, clientId: string): string {
 async function exchangeToken(
   domain: string,
   clientId: string,
-  clientSecret: string
+  clientSecret: string,
 ): Promise<CacheEntry> {
   const body = new URLSearchParams({
     grant_type: "client_credentials",
@@ -94,7 +94,7 @@ export async function getAccessToken(
   domain: string,
   clientId: string,
   clientSecret: string,
-  force = false
+  force = false,
 ): Promise<CacheEntry> {
   const key = cacheKey(domain, clientId);
   const now = Date.now();
@@ -142,19 +142,16 @@ export async function adminGraphQL(opts: {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const res = await fetch(
-      `https://${opts.domain}/admin/api/${opts.apiVersion}/graphql.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": opts.token,
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ query: opts.query }),
-        signal: ctrl.signal,
-      }
-    );
+    const res = await fetch(`https://${opts.domain}/admin/api/${opts.apiVersion}/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": opts.token,
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ query: opts.query }),
+      signal: ctrl.signal,
+    });
     // Case-insensitive header lookup.
     let apiVersionHeader: string | null = null;
     res.headers.forEach((value, key) => {
