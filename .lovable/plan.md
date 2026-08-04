@@ -38,8 +38,18 @@ Vytvorím `public/manifest.webmanifest`:
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
 ```
@@ -61,8 +71,8 @@ Do `head().meta` doplním `theme-color #1f3a1f`.
 
 - Build prejde, `/favicon.ico` 200, manifest validný, ikony viditeľné v DevTools → Application → Manifest.
 
-Schváľ a prepnem do build mode.  
-  
-+ nahradit aktualny signn in - google sign i od loveable a apple sign in impleentovat tiez !
+Schváľ a prepnem do build mode.
+
+- nahradit aktualny signn in - google sign i od loveable a apple sign in impleentovat tiez !
 
 &nbsp;

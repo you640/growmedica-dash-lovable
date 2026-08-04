@@ -151,14 +151,34 @@
 }
 
 @layer utilities {
-  .bg-gm-bg { background-color: var(--gm-bg); }
-  .bg-gm-bg-soft { background-color: var(--gm-bg-soft); }
-  .text-gm-text { color: var(--gm-text); }
-  .text-gm-text-muted { color: var(--gm-text-muted); }
-  .text-gm-primary { color: var(--gm-primary); }
-  .bg-gm-primary { background-color: var(--gm-primary); }
-  .border-gm-border { border-color: var(--gm-border); }
-  .border-gm-primary { border-color: var(--gm-primary); }
-  .rounded-gm-lg { border-radius: 1rem; }
-  .ring-gm-primary { --tw-ring-color: var(--gm-primary); }
+  .bg-gm-bg {
+    background-color: var(--gm-bg);
+  }
+  .bg-gm-bg-soft {
+    background-color: var(--gm-bg-soft);
+  }
+  .text-gm-text {
+    color: var(--gm-text);
+  }
+  .text-gm-text-muted {
+    color: var(--gm-text-muted);
+  }
+  .text-gm-primary {
+    color: var(--gm-primary);
+  }
+  .bg-gm-primary {
+    background-color: var(--gm-primary);
+  }
+  .border-gm-border {
+    border-color: var(--gm-border);
+  }
+  .border-gm-primary {
+    border-color: var(--gm-primary);
+  }
+  .rounded-gm-lg {
+    border-radius: 1rem;
+  }
+  .ring-gm-primary {
+    --tw-ring-color: var(--gm-primary);
+  }
 }

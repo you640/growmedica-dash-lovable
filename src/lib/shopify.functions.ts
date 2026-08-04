@@ -80,6 +80,315 @@ export const getShopifyAuthStatus = createServerFn({ method: "POST" })
     };
   });
 
+type ResolvedShopifyAuth =
+  | { ok: true; domain: string; apiVersion: string; authMode: AuthMode; run: RunQuery }
+  | { ok: false; error: string; authMode: AuthMode };
+
+type RunQuery = (
+  query: string,
+) => ReturnType<typeof import("./shopify-client.server").adminGraphQL>;
+
+/** Shared credential resolution for all Shopify Admin API reads. Never returns secret values. */
+async function resolveShopifyAuth(): Promise<ResolvedShopifyAuth> {
+  const { normalizeStoreDomain, normalizeApiVersion, adminGraphQL, adminGraphQLWithCredentials } =
+    await import("./shopify-client.server");
+
+  const cfg = await loadNonSecretConfig();
+  const domain = normalizeStoreDomain(cfg.store_domain || process.env.SHOPIFY_STORE_DOMAIN);
+  const apiVersion = normalizeApiVersion(cfg.api_version || process.env.SHOPIFY_API_VERSION);
+  const clientId = process.env.SHOPIFY_CLIENT_ID?.trim() ?? "";
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim() ?? "";
+  const legacyToken = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim() ?? "";
+
+  if (!domain) {
+    return {
+      ok: false,
+      error: "Neplatný Shopify store domain — nastavte ho v Nastaveniach.",
+      authMode: "none",
+    };
+  }
+
+  const hasId = clientId.length > 0;
+  const hasSecret = clientSecret.length > 0;
+
+  if (hasId !== hasSecret) {
+    return {
+      ok: false,
+      error: "SHOPIFY_CLIENT_ID a SHOPIFY_CLIENT_SECRET musia byť nastavené spolu.",
+      authMode: "partial",
+    };
+  }
+
+  if (hasId && hasSecret) {
+    return {
+      ok: true,
+      domain,
+      apiVersion,
+      authMode: "client_credentials",
+      run: (query) =>
+        adminGraphQLWithCredentials({ domain, apiVersion, clientId, clientSecret, query }),
+    };
+  }
+
+  if (legacyToken) {
+    return {
+      ok: true,
+      domain,
+      apiVersion,
+      authMode: "legacy_admin_token",
+      run: (query) => adminGraphQL({ domain, apiVersion, token: legacyToken, query }),
+    };
+  }
+
+  return {
+    ok: false,
+    error: "Chýbajú Shopify credentials — nastavte SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET.",
+    authMode: "none",
+  };
+}
+
+export type ShopifyProduct = {
+  id: string;
+  title: string;
+  status: string;
+  totalInventory: number;
+  price: string | null;
+  currency: string | null;
+  updatedAt: string;
+};
+
+export type ShopifyListResult<T> = {
+  ok: boolean;
+  items: T[];
+  error: string | null;
+};
+
+const PRODUCTS_QUERY = `{
+  products(first: 50, sortKey: UPDATED_AT, reverse: true) {
+    nodes {
+      id
+      title
+      status
+      totalInventory
+      updatedAt
+      priceRangeV2 { minVariantPrice { amount currencyCode } }
+    }
+  }
+}`;
+
+export const listShopifyProducts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ShopifyListResult<ShopifyProduct>> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+
+    const auth = await resolveShopifyAuth();
+    if (!auth.ok) return { ok: false, items: [], error: auth.error };
+
+    try {
+      const r = await auth.run(PRODUCTS_QUERY);
+      if (r.status !== 200) {
+        return { ok: false, items: [], error: `Admin API HTTP ${r.status}` };
+      }
+      const nodes = Array.isArray(r.json?.data?.products?.nodes) ? r.json.data.products.nodes : [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items: ShopifyProduct[] = nodes.map((n: any) => ({
+        id: String(n.id ?? ""),
+        title: String(n.title ?? ""),
+        status: String(n.status ?? ""),
+        totalInventory: Number(n.totalInventory ?? 0),
+        price: n.priceRangeV2?.minVariantPrice?.amount ?? null,
+        currency: n.priceRangeV2?.minVariantPrice?.currencyCode ?? null,
+        updatedAt: String(n.updatedAt ?? ""),
+      }));
+      return { ok: true, items, error: null };
+    } catch (e) {
+      console.error("[shopify:products]", { message: (e as Error).message });
+      return { ok: false, items: [], error: "Sieťová alebo runtime chyba pri Admin API." };
+    }
+  });
+
+export type ShopifyDashboardSummary = {
+  ok: boolean;
+  productsCount: number | null;
+  ordersTodayCount: number | null;
+  customersCount: number | null;
+  error: string | null;
+};
+
+const SUMMARY_QUERY = (todayISO: string) => `{
+  productsCount { count }
+  customersCount { count }
+  ordersToday: ordersCount(query: "created_at:>=${todayISO}") { count }
+}`;
+
+export const getShopifyDashboardSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ShopifyDashboardSummary> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+
+    const auth = await resolveShopifyAuth();
+    if (!auth.ok) {
+      return {
+        ok: false,
+        productsCount: null,
+        ordersTodayCount: null,
+        customersCount: null,
+        error: auth.error,
+      };
+    }
+
+    try {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const r = await auth.run(SUMMARY_QUERY(startOfDay.toISOString()));
+      if (r.status !== 200) {
+        return {
+          ok: false,
+          productsCount: null,
+          ordersTodayCount: null,
+          customersCount: null,
+          error: `Admin API HTTP ${r.status}`,
+        };
+      }
+      const data = r.json?.data ?? {};
+      return {
+        ok: true,
+        productsCount: Number.isFinite(data.productsCount?.count) ? data.productsCount.count : null,
+        ordersTodayCount: Number.isFinite(data.ordersToday?.count) ? data.ordersToday.count : null,
+        customersCount: Number.isFinite(data.customersCount?.count)
+          ? data.customersCount.count
+          : null,
+        error: null,
+      };
+    } catch (e) {
+      console.error("[shopify:summary]", { message: (e as Error).message });
+      return {
+        ok: false,
+        productsCount: null,
+        ordersTodayCount: null,
+        customersCount: null,
+        error: "Sieťová alebo runtime chyba pri Admin API.",
+      };
+    }
+  });
+
+export type ShopifyOrder = {
+  id: string;
+  name: string;
+  customer: string | null;
+  total: string | null;
+  currency: string | null;
+  financialStatus: string | null;
+  fulfillmentStatus: string | null;
+  createdAt: string;
+};
+
+const ORDERS_QUERY = `{
+  orders(first: 50, sortKey: CREATED_AT, reverse: true) {
+    nodes {
+      id
+      name
+      createdAt
+      displayFinancialStatus
+      displayFulfillmentStatus
+      customer { displayName }
+      currentTotalPriceSet { shopMoney { amount currencyCode } }
+    }
+  }
+}`;
+
+export const listShopifyOrders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ShopifyListResult<ShopifyOrder>> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+
+    const auth = await resolveShopifyAuth();
+    if (!auth.ok) return { ok: false, items: [], error: auth.error };
+
+    try {
+      const r = await auth.run(ORDERS_QUERY);
+      if (r.status !== 200) {
+        return { ok: false, items: [], error: `Admin API HTTP ${r.status}` };
+      }
+      const nodes = Array.isArray(r.json?.data?.orders?.nodes) ? r.json.data.orders.nodes : [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items: ShopifyOrder[] = nodes.map((n: any) => ({
+        id: String(n.id ?? ""),
+        name: String(n.name ?? ""),
+        customer: n.customer?.displayName ?? null,
+        total: n.currentTotalPriceSet?.shopMoney?.amount ?? null,
+        currency: n.currentTotalPriceSet?.shopMoney?.currencyCode ?? null,
+        financialStatus: n.displayFinancialStatus ?? null,
+        fulfillmentStatus: n.displayFulfillmentStatus ?? null,
+        createdAt: String(n.createdAt ?? ""),
+      }));
+      return { ok: true, items, error: null };
+    } catch (e) {
+      console.error("[shopify:orders]", { message: (e as Error).message });
+      return { ok: false, items: [], error: "Sieťová alebo runtime chyba pri Admin API." };
+    }
+  });
+
+export type ShopifyCustomer = {
+  id: string;
+  name: string;
+  email: string | null;
+  ordersCount: number;
+  totalSpent: string | null;
+  currency: string | null;
+  createdAt: string;
+};
+
+const CUSTOMERS_QUERY = `{
+  customers(first: 50, sortKey: UPDATED_AT, reverse: true) {
+    nodes {
+      id
+      displayName
+      email
+      numberOfOrders
+      createdAt
+      amountSpent { amount currencyCode }
+    }
+  }
+}`;
+
+export const listShopifyCustomers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ShopifyListResult<ShopifyCustomer>> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+
+    const auth = await resolveShopifyAuth();
+    if (!auth.ok) return { ok: false, items: [], error: auth.error };
+
+    try {
+      const r = await auth.run(CUSTOMERS_QUERY);
+      if (r.status !== 200) {
+        return { ok: false, items: [], error: `Admin API HTTP ${r.status}` };
+      }
+      const nodes = Array.isArray(r.json?.data?.customers?.nodes)
+        ? r.json.data.customers.nodes
+        : [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items: ShopifyCustomer[] = nodes.map((n: any) => ({
+        id: String(n.id ?? ""),
+        name: String(n.displayName ?? ""),
+        email: n.email ?? null,
+        ordersCount: Number(n.numberOfOrders ?? 0),
+        totalSpent: n.amountSpent?.amount ?? null,
+        currency: n.amountSpent?.currencyCode ?? null,
+        createdAt: String(n.createdAt ?? ""),
+      }));
+      return { ok: true, items, error: null };
+    } catch (e) {
+      console.error("[shopify:customers]", { message: (e as Error).message });
+      return { ok: false, items: [], error: "Sieťová alebo runtime chyba pri Admin API." };
+    }
+  });
+
 export const testShopifyConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ShopifyTestResult> => {

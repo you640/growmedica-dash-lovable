@@ -74,8 +74,7 @@ export const testWordPressConnection = createServerFn({ method: "POST" })
             pages: pages.totalItems,
             media: media.totalItems,
           },
-          wooDetected:
-            !!me.json?.woocommerce_meta || namespaces.some((n) => n.startsWith("wc/")),
+          wooDetected: !!me.json?.woocommerce_meta || namespaces.some((n) => n.startsWith("wc/")),
           error: null,
         };
       }

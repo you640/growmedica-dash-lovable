@@ -1,48 +1,111 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { GlassPanel, SectionHeading } from "@/components/admin/AdminShell";
+import { getShopifyDashboardSummary } from "@/lib/shopify.functions";
 import { Package, ShoppingCart, Sparkles, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminHome,
 });
 
+function StatValue({ value, notConnected }: { value: number | null; notConnected: boolean }) {
+  if (notConnected) return <span className="text-lg text-gm-text-muted">Nepripojené</span>;
+  if (value === null) return <span>—</span>;
+  return <>{new Intl.NumberFormat("sk-SK").format(value)}</>;
+}
+
 function AdminHome() {
+  const fetchSummary = useServerFn(getShopifyDashboardSummary);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<{
+    productsCount: number | null;
+    ordersTodayCount: number | null;
+    customersCount: number | null;
+    notConnected: boolean;
+  }>({ productsCount: null, ordersTodayCount: null, customersCount: null, notConnected: false });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetchSummary();
+        setSummary({
+          productsCount: r.productsCount,
+          ordersTodayCount: r.ordersTodayCount,
+          customersCount: r.customersCount,
+          notConnected: !r.ok,
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const hint = summary.notConnected
+    ? "Pripojte Shopify v Nastaveniach."
+    : loading
+      ? "Načítavam…"
+      : "Dáta naživo zo Shopify Admin API.";
+
   return (
     <div>
       <SectionHeading
         title="Vitajte v GrowMedica Admin"
-        subtitle="Headless command center pre Shopify + Lovable Cloud. Fáza 1 — autentifikácia, integrácie a webhook log sú aktívne."
+        subtitle="Headless command center pre Shopify + Lovable Cloud."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <GlassPanel className="p-6">
           <div className="text-xs uppercase tracking-wider text-gm-text-muted">Produkty</div>
-          <div className="text-3xl font-semibold mt-2">—</div>
-          <div className="text-xs text-gm-text-muted mt-1">Dáta naživo budú vo Fáze 2.</div>
+          <div className="text-3xl font-semibold mt-2">
+            <StatValue value={summary.productsCount} notConnected={summary.notConnected} />
+          </div>
+          <div className="text-xs text-gm-text-muted mt-1">{hint}</div>
         </GlassPanel>
         <GlassPanel className="p-6">
           <div className="text-xs uppercase tracking-wider text-gm-text-muted">Objednávky dnes</div>
-          <div className="text-3xl font-semibold mt-2">—</div>
-          <div className="text-xs text-gm-text-muted mt-1">Dáta naživo budú vo Fáze 2.</div>
+          <div className="text-3xl font-semibold mt-2">
+            <StatValue value={summary.ordersTodayCount} notConnected={summary.notConnected} />
+          </div>
+          <div className="text-xs text-gm-text-muted mt-1">{hint}</div>
         </GlassPanel>
         <GlassPanel className="p-6">
           <div className="text-xs uppercase tracking-wider text-gm-text-muted">Zákazníci</div>
-          <div className="text-3xl font-semibold mt-2">—</div>
-          <div className="text-xs text-gm-text-muted mt-1">Dáta naživo budú vo Fáze 2.</div>
+          <div className="text-3xl font-semibold mt-2">
+            <StatValue value={summary.customersCount} notConnected={summary.notConnected} />
+          </div>
+          <div className="text-xs text-gm-text-muted mt-1">{hint}</div>
         </GlassPanel>
       </div>
 
       <div className="mt-8 grid gap-3 md:grid-cols-4">
-        <Quick to="/admin/produkty" icon={<Package className="w-4 h-4" />}>Nový produkt</Quick>
-        <Quick to="/admin/produkty" icon={<Sparkles className="w-4 h-4" />}>AI Optimalizácia</Quick>
-        <Quick to="/admin/objednavky" icon={<ShoppingCart className="w-4 h-4" />}>Objednávky</Quick>
-        <Quick to="/admin/nastavenia" icon={<Settings className="w-4 h-4" />}>Integrácie</Quick>
+        <Quick to="/admin/produkty" icon={<Package className="w-4 h-4" />}>
+          Nový produkt
+        </Quick>
+        <Quick to="/admin/produkty" icon={<Sparkles className="w-4 h-4" />}>
+          AI Optimalizácia
+        </Quick>
+        <Quick to="/admin/objednavky" icon={<ShoppingCart className="w-4 h-4" />}>
+          Objednávky
+        </Quick>
+        <Quick to="/admin/nastavenia" icon={<Settings className="w-4 h-4" />}>
+          Integrácie
+        </Quick>
       </div>
     </div>
   );
 }
 
-function Quick({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Quick({
+  to,
+  icon,
+  children,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       to={to}

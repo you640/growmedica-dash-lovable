@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { Json } from "@/integrations/supabase/types";
 
 function toHex(buf: ArrayBuffer): string {
   return Array.from(new Uint8Array(buf))
@@ -26,7 +27,7 @@ async function hmacSha256(secret: string, body: string): Promise<Uint8Array> {
     new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
   return new Uint8Array(sig);
@@ -41,9 +42,7 @@ export const Route = createFileRoute("/api/public/webhooks/shopify")({
         const topic = request.headers.get("x-shopify-topic") ?? "unknown";
         const shop = request.headers.get("x-shopify-shop-domain") ?? "unknown";
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Load webhook secret (env or DB config)
         let secret = process.env.SHOPIFY_WEBHOOK_SECRET ?? "";
@@ -75,18 +74,17 @@ export const Route = createFileRoute("/api/public/webhooks/shopify")({
           return new Response("Invalid signature", { status: 401 });
         }
 
-        let payload: unknown = null;
+        let payload: Json = null;
         try {
-          payload = JSON.parse(body);
+          payload = JSON.parse(body) as Json;
         } catch {
           payload = { raw: body.slice(0, 1000) };
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await supabaseAdmin.from("webhook_events").insert({
           source: `shopify:${shop}`,
           topic,
-          payload: payload as any,
+          payload,
           status: "received",
         });
 

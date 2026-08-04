@@ -30,3 +30,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Stray editor/sync artifacts observed at repo root
+/index.html
+/index.html.css
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
