@@ -440,8 +440,151 @@ function LovableCloudCard() {
   );
 }
 
-type FieldSpec = {
+function WordPressCard({ onSaved }: { onSaved: () => void }) {
+  const test = useServerFn(testWordPressConnection);
+  const listPosts = useServerFn(listWordPressPosts);
+  type TestResult = Awaited<ReturnType<typeof test>>;
+  type PostsResult = Awaited<ReturnType<typeof listPosts>>;
 
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<TestResult | null>(null);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [posts, setPosts] = useState<PostsResult["posts"]>([]);
+
+  async function runTest() {
+    setTesting(true);
+    try {
+      const r = await test();
+      setResult(r);
+      if (r.ok) toast.success(`Pripojené: ${r.siteName ?? r.siteUrl ?? "WordPress"}`);
+      else toast.error(r.error ?? "Test pripojenia zlyhal.");
+      onSaved();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  async function loadPosts() {
+    setLoadingPosts(true);
+    try {
+      const r = await listPosts({ data: { perPage: 5, page: 1, status: "publish" } });
+      setPosts(r.posts);
+      if (r.error) toast.error(`Načítanie príspevkov zlyhalo: ${r.error}`);
+      else if (r.posts.length === 0) toast.info("Žiadne publikované príspevky.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoadingPosts(false);
+    }
+  }
+
+  return (
+    <GlassPanel className="p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">WordPress</h2>
+        <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">
+          Self-hosted WordPress REST API (<span className="font-mono">/wp-json/wp/v2</span>) cez
+          Lovable konektor. Site URL a Application Password sú uložené v konektore — v aplikácii
+          nikdy neopúšťajú server.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={runTest}
+          disabled={testing}
+          className="rounded-full bg-gm-primary text-white px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+        >
+          {testing && <Loader2 className="w-4 h-4 animate-spin" />}
+          Test pripojenia
+        </button>
+        <button
+          onClick={loadPosts}
+          disabled={loadingPosts}
+          className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
+        >
+          {loadingPosts && <Loader2 className="w-4 h-4 animate-spin" />}
+          Načítať posledné príspevky
+        </button>
+      </div>
+
+      {result && (
+        <div className="grid gap-3 md:grid-cols-2 text-sm">
+          <ResultRow
+            label="REST API auth"
+            ok={result.ok}
+            detail={
+              result.ok
+                ? `Používateľ: ${result.user ?? "?"}${result.isSuperAdmin ? " (super admin)" : ""}`
+                : (result.error ?? "Neznáma chyba")
+            }
+          />
+          <ResultRow
+            label="Stránka"
+            ok={!!result.siteUrl}
+            detail={`${result.siteName ?? ""} ${result.siteUrl ?? ""}`.trim() || "Neznáma"}
+          />
+          <ResultRow
+            label="Obsah"
+            ok={(result.counts.posts ?? 0) >= 0 && result.ok}
+            detail={`Príspevky: ${result.counts.posts ?? "?"} · Stránky: ${
+              result.counts.pages ?? "?"
+            } · Média: ${result.counts.media ?? "?"}`}
+          />
+          <ResultRow
+            label="REST namespaces"
+            ok={result.restNamespaces.length > 0}
+            detail={`${result.restNamespaces.slice(0, 8).join(", ") || "—"}${
+              result.wooDetected ? " · WooCommerce detegované" : ""
+            }`}
+          />
+        </div>
+      )}
+
+      {posts.length > 0 && (
+        <div className="overflow-auto rounded-md border border-gm-border">
+          <table className="w-full text-xs">
+            <thead className="bg-gm-bg-soft text-gm-text-muted">
+              <tr>
+                <th className="text-left px-3 py-2">Dátum</th>
+                <th className="text-left px-3 py-2">Titulok</th>
+                <th className="text-left px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {posts.map((p) => (
+                <tr key={p.id} className="border-t border-gm-border">
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {p.date ? new Date(p.date).toLocaleDateString("sk-SK") : "—"}
+                  </td>
+                  <td className="px-3 py-2">
+                    {p.link ? (
+                      <a
+                        href={p.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:underline text-gm-text"
+                      >
+                        {p.title}
+                      </a>
+                    ) : (
+                      p.title
+                    )}
+                  </td>
+                  <td className="px-3 py-2">{p.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </GlassPanel>
+  );
+}
+
+type FieldSpec = {
   key: string;
   label: string;
   placeholder?: string;
