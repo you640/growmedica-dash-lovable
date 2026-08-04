@@ -441,6 +441,7 @@ function LovableCloudCard() {
 }
 
 type FieldSpec = {
+
   key: string;
   label: string;
   placeholder?: string;
