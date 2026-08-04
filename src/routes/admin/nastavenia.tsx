@@ -9,6 +9,7 @@ import {
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
 import { testShopifyConnection, getShopifyAuthStatus } from "@/lib/shopify.functions";
+import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
 import {
   CheckCircle2,
   XCircle,
@@ -112,7 +113,8 @@ function SettingsPage() {
         <div>
           {tab === "shopify" && <ShopifyCard onSaved={refresh} />}
           {tab === "lovable_cloud" && <LovableCloudCard />}
-          {tab !== "shopify" && tab !== "lovable_cloud" && (
+          {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
+          {tab !== "shopify" && tab !== "lovable_cloud" && tab !== "wordpress" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}
         </div>
