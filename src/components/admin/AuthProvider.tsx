@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- useAuth belongs next to AuthCtx/AuthProvider
 export function useAuth(): Ctx {
   const ctx = useContext(AuthCtx);
   if (!ctx) throw new Error("useAuth must be inside AuthProvider");
