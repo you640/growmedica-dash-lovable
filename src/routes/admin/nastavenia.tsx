@@ -165,7 +165,7 @@ function LovableCloudCard() {
         <h2 className="text-lg font-semibold">Lovable Cloud</h2>
         <p className="text-sm text-gm-text-muted mt-1">
           Postgres + edge runtime sú zapnuté automaticky. Tabuľky: integrations, webhook_endpoints,
-          webhook_events, sync_jobs, shopify_product_cache.
+          webhook_events, sync_jobs.
         </p>
       </div>
 
@@ -175,7 +175,7 @@ function LovableCloudCard() {
           <div className="text-sm text-gm-text-muted">Načítavam…</div>
         ) : events.length === 0 ? (
           <div className="text-sm text-gm-text-muted">
-            Zatiaľ žiadne. Po nakonfigurovaní Shopify webhooku sa tu objavia.
+            Zatiaľ žiadne. Po nakonfigurovaní webhooku sa tu objavia.
           </div>
         ) : (
           <div className="overflow-auto rounded-md border border-gm-border">
@@ -447,7 +447,7 @@ const PROVIDER_SCHEMAS: Record<
   custom: {
     label: "Custom Webhook",
     description:
-      "Vlastný relay endpoint, ktorému budeme posielať preposlané Shopify eventy (Fáza 2 — fan-out engine).",
+      "Vlastný relay endpoint, ktorému budeme posielať preposlané WordPress eventy (fan-out engine).",
     fields: [
       { key: "target_url", label: "Target URL", placeholder: "https://hooks.example.com/in" },
       { key: "secret", label: "Shared secret (HMAC)", secret: true },
