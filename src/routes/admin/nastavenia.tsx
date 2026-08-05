@@ -8,13 +8,11 @@ import {
   upsertIntegrationConfig,
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
-import { testShopifyConnection, getShopifyAuthStatus } from "@/lib/shopify.functions";
 import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
 import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Plug,
   Database,
   Cloud,
   Flame,
@@ -22,21 +20,34 @@ import {
   Server,
   Globe,
   Webhook,
-  Copy,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/nastavenia")({
+  head: () => ({
+    meta: [
+      { title: "Nastavenia — GrowMedica Admin" },
+      {
+        name: "description",
+        content:
+          "Integration Hub: WordPress REST API, Lovable Cloud, Vercel, Mistral AI a vlastné webhooky.",
+      },
+      { property: "og:title", content: "Nastavenia — GrowMedica Admin" },
+      {
+        property: "og:description",
+        content: "Integration Hub pre WordPress a ostatné služby GrowMedica.",
+      },
+    ],
+  }),
   component: SettingsPage,
 });
 
 const PROVIDERS = [
-  { id: "shopify", label: "Shopify", icon: Plug },
+  { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
   { id: "firebase", label: "Firebase", icon: Flame },
   { id: "mistral_ai", label: "Mistral AI", icon: Sparkles },
   { id: "gcp", label: "Google Cloud", icon: Server },
-  { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "custom", label: "Custom Webhook", icon: Webhook },
 ] as const;
 
@@ -62,7 +73,7 @@ function StatusDot({ status }: { status?: string | null }) {
 }
 
 function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("shopify");
+  const [tab, setTab] = useState<Tab>("wordpress");
   const listFn = useServerFn(listIntegrations);
   const [integrations, setIntegrations] = useState<IntegrationRow[]>([]);
 
@@ -82,7 +93,7 @@ function SettingsPage() {
     <div>
       <SectionHeading
         title="Integration Hub"
-        subtitle="Pripojte Shopify, Lovable Cloud, Vercel, Firebase, Mistral, GCP, WordPress a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
+        subtitle="Pripojte WordPress, Lovable Cloud, Vercel, Firebase, Mistral, GCP a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
       />
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -111,10 +122,9 @@ function SettingsPage() {
         </GlassPanel>
 
         <div>
-          {tab === "shopify" && <ShopifyCard onSaved={refresh} />}
           {tab === "lovable_cloud" && <LovableCloudCard />}
           {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
-          {tab !== "shopify" && tab !== "lovable_cloud" && tab !== "wordpress" && (
+          {tab !== "lovable_cloud" && tab !== "wordpress" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}
         </div>
