@@ -27,7 +27,7 @@ export function PhaseStub({ title, subtitle, phase, bullets, cta, icon }: Props)
             </div>
             <h2 className="text-lg font-semibold mt-1">Modul je pripravený, čaká na pripojenie integrácie</h2>
             <p className="text-sm text-gm-text-muted mt-1 max-w-xl">
-              Po dokončení Fázy 1 (Shopify creds v Nastaveniach) sa sem napoja live dáta.
+              Po pripojení WordPressu v Nastaveniach sa sem napoja live dáta.
             </p>
           </div>
         </div>
