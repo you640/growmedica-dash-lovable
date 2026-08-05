@@ -9,25 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as AdminZakazniciRouteImport } from './routes/admin/zakaznici'
-import { Route as AdminProduktyRouteImport } from './routes/admin/produkty'
-import { Route as AdminPrihlasenieRouteImport } from './routes/admin/prihlasenie'
-import { Route as AdminObjednavkyRouteImport } from './routes/admin/objednavky'
-import { Route as AdminNastaveniaRouteImport } from './routes/admin/nastavenia'
-import { Route as AdminAnalytikaRouteImport } from './routes/admin/analytika'
 import { Route as AdminAiRouteImport } from './routes/admin/ai'
+import { Route as AdminAnalytikaRouteImport } from './routes/admin/analytika'
+import { Route as AdminNastaveniaRouteImport } from './routes/admin/nastavenia'
+import { Route as AdminObjednavkyRouteImport } from './routes/admin/objednavky'
+import { Route as AdminPrihlasenieRouteImport } from './routes/admin/prihlasenie'
+import { Route as AdminProduktyRouteImport } from './routes/admin/produkty'
+import { Route as AdminZakazniciRouteImport } from './routes/admin/zakaznici'
 
-const AdminRouteRoute = AdminRouteRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -35,29 +35,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminZakazniciRoute = AdminZakazniciRouteImport.update({
-  id: '/zakaznici',
-  path: '/zakaznici',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminProduktyRoute = AdminProduktyRouteImport.update({
-  id: '/produkty',
-  path: '/produkty',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminPrihlasenieRoute = AdminPrihlasenieRouteImport.update({
-  id: '/prihlasenie',
-  path: '/prihlasenie',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminObjednavkyRoute = AdminObjednavkyRouteImport.update({
-  id: '/objednavky',
-  path: '/objednavky',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminNastaveniaRoute = AdminNastaveniaRouteImport.update({
-  id: '/nastavenia',
-  path: '/nastavenia',
+const AdminAiRoute = AdminAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminAnalytikaRoute = AdminAnalytikaRouteImport.update({
@@ -65,9 +45,29 @@ const AdminAnalytikaRoute = AdminAnalytikaRouteImport.update({
   path: '/analytika',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminAiRoute = AdminAiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
+const AdminNastaveniaRoute = AdminNastaveniaRouteImport.update({
+  id: '/nastavenia',
+  path: '/nastavenia',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminObjednavkyRoute = AdminObjednavkyRouteImport.update({
+  id: '/objednavky',
+  path: '/objednavky',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPrihlasenieRoute = AdminPrihlasenieRouteImport.update({
+  id: '/prihlasenie',
+  path: '/prihlasenie',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProduktyRoute = AdminProduktyRouteImport.update({
+  id: '/produkty',
+  path: '/produkty',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminZakazniciRoute = AdminZakazniciRouteImport.update({
+  id: '/zakaznici',
+  path: '/zakaznici',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 
@@ -152,18 +152,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -173,39 +173,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/zakaznici': {
-      id: '/admin/zakaznici'
-      path: '/zakaznici'
-      fullPath: '/admin/zakaznici'
-      preLoaderRoute: typeof AdminZakazniciRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/produkty': {
-      id: '/admin/produkty'
-      path: '/produkty'
-      fullPath: '/admin/produkty'
-      preLoaderRoute: typeof AdminProduktyRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/prihlasenie': {
-      id: '/admin/prihlasenie'
-      path: '/prihlasenie'
-      fullPath: '/admin/prihlasenie'
-      preLoaderRoute: typeof AdminPrihlasenieRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/objednavky': {
-      id: '/admin/objednavky'
-      path: '/objednavky'
-      fullPath: '/admin/objednavky'
-      preLoaderRoute: typeof AdminObjednavkyRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/nastavenia': {
-      id: '/admin/nastavenia'
-      path: '/nastavenia'
-      fullPath: '/admin/nastavenia'
-      preLoaderRoute: typeof AdminNastaveniaRouteImport
+    '/admin/ai': {
+      id: '/admin/ai'
+      path: '/ai'
+      fullPath: '/admin/ai'
+      preLoaderRoute: typeof AdminAiRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/analytika': {
@@ -215,11 +187,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalytikaRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/ai': {
-      id: '/admin/ai'
-      path: '/ai'
-      fullPath: '/admin/ai'
-      preLoaderRoute: typeof AdminAiRouteImport
+    '/admin/nastavenia': {
+      id: '/admin/nastavenia'
+      path: '/nastavenia'
+      fullPath: '/admin/nastavenia'
+      preLoaderRoute: typeof AdminNastaveniaRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/objednavky': {
+      id: '/admin/objednavky'
+      path: '/objednavky'
+      fullPath: '/admin/objednavky'
+      preLoaderRoute: typeof AdminObjednavkyRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/prihlasenie': {
+      id: '/admin/prihlasenie'
+      path: '/prihlasenie'
+      fullPath: '/admin/prihlasenie'
+      preLoaderRoute: typeof AdminPrihlasenieRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/produkty': {
+      id: '/admin/produkty'
+      path: '/produkty'
+      fullPath: '/admin/produkty'
+      preLoaderRoute: typeof AdminProduktyRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/zakaznici': {
+      id: '/admin/zakaznici'
+      path: '/zakaznici'
+      fullPath: '/admin/zakaznici'
+      preLoaderRoute: typeof AdminZakazniciRouteImport
       parentRoute: typeof AdminRouteRoute
     }
   }

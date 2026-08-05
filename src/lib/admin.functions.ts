@@ -40,7 +40,7 @@ const UpsertInput = z.object({
 
 export const upsertIntegrationConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => UpsertInput.parse(d))
+  .validator((d: unknown) => UpsertInput.parse(d))
   .handler(async ({ data, context }) => {
     const { assertAdmin } = await import("./admin-guard.server");
     assertAdmin(context.claims);

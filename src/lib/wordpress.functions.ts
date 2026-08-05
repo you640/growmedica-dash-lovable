@@ -113,7 +113,7 @@ export type WpPost = {
 
 export const listWordPressPosts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         perPage: z.number().int().min(1).max(50).default(10),
