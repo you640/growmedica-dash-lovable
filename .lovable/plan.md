@@ -1,68 +1,25 @@
-## Plán
+# Odstránenie Shopify — zostáva len WordPress + produkčný stav
 
-### 1. ADMIN_EMAILS secret
+## 1. Zmazať Shopify
+- Súbory: `src/lib/shopify.functions.ts`, `src/lib/shopify-client.server.ts`, `src/routes/api/public/webhooks/shopify.ts`.
+- `src/routes/admin/nastavenia.tsx`: odstrániť záložku a kartu Shopify (vrátane statusov SHOPIFY_CLIENT_ID/SECRET a webhook URL bloku). WordPress sa stane predvolenou záložkou; podtitul a text pri Custom Webhook sa prepíše bez Shopify.
+- `src/components/admin/PhaseStub.tsx`, `src/routes/admin/index.tsx`, `produkty.tsx`, `objednavky.tsx`, `zakaznici.tsx`, `ai.tsx`, `analytika.tsx`: slovenské texty prepísať zo Shopify na WordPress / WooCommerce.
+- `src/routes/__root.tsx`: meta description bez Shopify.
+- `.env.example`: vymazať sekciu Shopify.
 
-Otvorím secret formulár pre `ADMIN_EMAILS` cez `secrets--update_secret` (alebo `add_secret` ak neexistuje). Vy zadáte hodnotu:
+## 2. WordPress ako jediné napojenie
+WordPress konektor (test pripojenia, info o stránke, počty príspevkov/stránok/médií, REST namespaces, detekcia WooCommerce, načítanie príspevkov) zostáva bez zmien a stáva sa hlavnou integráciou. Karta sa doplní o odkaz na moduly, ktoré z nej budú čerpať.
 
-```
-erikbabcan@gmail.com,u0352652320@gmail.com,Kajo.Szaffko@gmail.com
-```
+## 3. Databáza
+Migrácia: `DROP TABLE public.shopify_product_cache` a vymazanie riadkov v `integrations` / `webhook_events` s providerom/source shopify. Ostatné tabuľky zostávajú. Regenerácia typov.
 
-Server fn `verifyAdminAccess` už parsuje CSV podľa čiarky, takže žiadna zmena kódu netreba.
+## 4. Secrets
+`SHOPIFY_CLIENT_ID` a `SHOPIFY_CLIENT_SECRET` sa už nepoužívajú — navrhnem ich zmazať.
 
-### 2. Ikony z `gqqqimage.png`
+## 5. Produkčný stav
+- Oprava runtime chýb z náhľadu: „useAuth must be inside AuthProvider" (SSR) a „Unauthorized: No authorization header provided" — chránené server funkcie sa budú volať až po potvrdenej session.
+- Vlastné `head()` metadata pre admin routy.
+- Typecheck, lint, build, bezpečnostný sken + DB linter, potom publikovanie.
 
-Zdroj: `/mnt/user-uploads/gqqqimage.png` (1024×1024, zelený list v zlatom prsteni, priehľadné pozadie).
-
-Vygenerujem cez ImageMagick (`nix run nixpkgs#imagemagick`) do `public/`:
-
-- `favicon.ico` (multi-size 16/32/48)
-- `favicon-16.png`, `favicon-32.png`
-- `apple-touch-icon.png` (180×180, iOS home-screen)
-- `icon-192.png`, `icon-512.png` (Android PWA, oba `any` aj `maskable` variant: `icon-192-maskable.png`, `icon-512-maskable.png` s ~10% safe-area paddingom a tmavým pozadím)
-- `og-image.png` (1200×630 pre social share — voliteľne)
-
-### 3. Web app manifest (PWA install — manifest-only, bez service workera)
-
-Vytvorím `public/manifest.webmanifest`:
-
-```json
-{
-  "name": "GrowMedica Admin",
-  "short_name": "GrowMedica",
-  "start_url": "/admin",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#FDFBF7",
-  "theme_color": "#1f3a1f",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
-}
-```
-
-Bez service workera — používateľ nepýtal offline, len ikonu/inštaláciu na home-screen.
-
-### 4. Head tagy v `src/routes/__root.tsx`
-
-Do `head().links` doplním:
-
-- `rel="icon"` → `/favicon.ico` (rieši 404)
-- `rel="icon" type="image/png" sizes="32x32"` → `/favicon-32.png`
-- `rel="apple-touch-icon" sizes="180x180"` → `/apple-touch-icon.png`
-- `rel="manifest"` → `/manifest.webmanifest`
-
-Do `head().meta` doplním `theme-color #1f3a1f`.
-
-### 5. Verifikácia
-
-- Build prejde, `/favicon.ico` 200, manifest validný, ikony viditeľné v DevTools → Application → Manifest.
-
-Schváľ a prepnem do build mode.  
-  
-+ nahradit aktualny signn in - google sign i od loveable a apple sign in impleentovat tiez !
-
-&nbsp;
+## Poznámka
+Moduly Produkty / Objednávky / Zákazníci zostanú ako pripravené prázdne stavy s odkazom na Nastavenia. Ak ich chcete naplniť živými dátami cez WooCommerce REST, poviete a doplním to v ďalšom kroku.
