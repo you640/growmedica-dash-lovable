@@ -3,6 +3,7 @@ import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminShell } from "@/components/admin/AdminShell";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   component: AdminLayout,
 });
 

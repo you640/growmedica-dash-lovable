@@ -3,6 +3,14 @@ import { PhaseStub } from "@/components/admin/PhaseStub";
 import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/admin/ai")({
+  head: () => ({
+    meta: [
+      { title: "Agentic AI — GrowMedica Admin" },
+      { name: "description", content: "AI command bar s Mistral modelmi naprieč integráciami." },
+      { property: "og:title", content: "Agentic AI — GrowMedica Admin" },
+      { property: "og:description", content: "AI command bar s Mistral modelmi." },
+    ],
+  }),
   component: () => (
     <PhaseStub
       title="Agentic AI"

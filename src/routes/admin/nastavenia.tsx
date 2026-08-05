@@ -8,13 +8,11 @@ import {
   upsertIntegrationConfig,
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
-import { testShopifyConnection, getShopifyAuthStatus } from "@/lib/shopify.functions";
 import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
 import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Plug,
   Database,
   Cloud,
   Flame,
@@ -22,21 +20,34 @@ import {
   Server,
   Globe,
   Webhook,
-  Copy,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/nastavenia")({
+  head: () => ({
+    meta: [
+      { title: "Nastavenia — GrowMedica Admin" },
+      {
+        name: "description",
+        content:
+          "Integration Hub: WordPress REST API, Lovable Cloud, Vercel, Mistral AI a vlastné webhooky.",
+      },
+      { property: "og:title", content: "Nastavenia — GrowMedica Admin" },
+      {
+        property: "og:description",
+        content: "Integration Hub pre WordPress a ostatné služby GrowMedica.",
+      },
+    ],
+  }),
   component: SettingsPage,
 });
 
 const PROVIDERS = [
-  { id: "shopify", label: "Shopify", icon: Plug },
+  { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
   { id: "firebase", label: "Firebase", icon: Flame },
   { id: "mistral_ai", label: "Mistral AI", icon: Sparkles },
   { id: "gcp", label: "Google Cloud", icon: Server },
-  { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "custom", label: "Custom Webhook", icon: Webhook },
 ] as const;
 
@@ -62,7 +73,7 @@ function StatusDot({ status }: { status?: string | null }) {
 }
 
 function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("shopify");
+  const [tab, setTab] = useState<Tab>("wordpress");
   const listFn = useServerFn(listIntegrations);
   const [integrations, setIntegrations] = useState<IntegrationRow[]>([]);
 
@@ -82,7 +93,7 @@ function SettingsPage() {
     <div>
       <SectionHeading
         title="Integration Hub"
-        subtitle="Pripojte Shopify, Lovable Cloud, Vercel, Firebase, Mistral, GCP, WordPress a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
+        subtitle="Pripojte WordPress, Lovable Cloud, Vercel, Firebase, Mistral, GCP a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
       />
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -111,245 +122,14 @@ function SettingsPage() {
         </GlassPanel>
 
         <div>
-          {tab === "shopify" && <ShopifyCard onSaved={refresh} />}
           {tab === "lovable_cloud" && <LovableCloudCard />}
           {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
-          {tab !== "shopify" && tab !== "lovable_cloud" && tab !== "wordpress" && (
+          {tab !== "lovable_cloud" && tab !== "wordpress" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function ShopifyCard({ onSaved }: { onSaved: () => void }) {
-  const upsert = useServerFn(upsertIntegrationConfig);
-  const test = useServerFn(testShopifyConnection);
-  const authStatusFn = useServerFn(getShopifyAuthStatus);
-
-  const [form, setForm] = useState({
-    store_domain: "",
-    api_version: "2026-07",
-    storefront_token: "",
-    webhook_secret: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  type TestResult = Awaited<ReturnType<typeof test>>;
-  const [result, setResult] = useState<TestResult | null>(null);
-  const [savedMsg, setSavedMsg] = useState<string | null>(null);
-  type AuthStatus = Awaited<ReturnType<typeof authStatusFn>>;
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-
-  useEffect(() => {
-    authStatusFn()
-      .then((s) => setAuthStatus(s))
-      .catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function save() {
-    setSaving(true);
-    setSavedMsg(null);
-    try {
-      const config: Record<string, string> = { api_version: form.api_version };
-      for (const k of ["store_domain", "storefront_token", "webhook_secret"] as const) {
-        if (form[k]) config[k] = form[k];
-      }
-      await upsert({
-        data: { provider: "shopify", name: "default", config },
-      });
-      setSavedMsg("Uložené.");
-      toast.success("Konfigurácia Shopify uložená.");
-      onSaved();
-      authStatusFn()
-        .then(setAuthStatus)
-        .catch(() => undefined);
-    } catch (e) {
-      setSavedMsg(`Chyba: ${(e as Error).message}`);
-      toast.error(`Chyba: ${(e as Error).message}`);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function runTest() {
-    setTesting(true);
-    setResult(null);
-    try {
-      const r = await test();
-      setResult(r);
-      if (r.ok) {
-        toast.success(`Pripojené: ${r.shopName ?? r.myshopifyDomain ?? "OK"}`);
-      } else {
-        toast.error(r.error ?? "Test pripojenia zlyhal.");
-      }
-      onSaved();
-    } catch (e) {
-      setResult({
-        ok: false,
-        domain: null,
-        apiVersion: form.api_version,
-        apiVersionHeader: null,
-        versionOk: false,
-        shopName: null,
-        myshopifyDomain: null,
-        scopes: [],
-        missingScopes: ["read_products", "write_products", "read_inventory", "write_inventory"],
-        authMode: "none",
-        error: (e as Error).message,
-      } as TestResult);
-      toast.error((e as Error).message);
-    } finally {
-      setTesting(false);
-    }
-  }
-
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://your-app";
-
-  return (
-    <GlassPanel className="p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">Shopify</h2>
-        <p className="text-sm text-gm-text-muted mt-1">
-          Admin API 2026-07 cez server-side client credentials. Client ID a client secret sa
-          nastavujú výlučne ako Lovable Cloud secrets — v UI ich nikdy neukladáme ani nezobrazujeme.
-          Storefront token je voliteľný.
-        </p>
-      </div>
-
-      {authStatus && (
-        <div className="rounded-md border border-gm-border bg-white/60 p-4 text-sm space-y-2">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <StatusLine
-              label="SHOPIFY_CLIENT_ID"
-              ok={authStatus.hasClientId}
-              okText="Configured"
-              badText="Missing"
-            />
-            <StatusLine
-              label="SHOPIFY_CLIENT_SECRET"
-              ok={authStatus.hasClientSecret}
-              okText="Configured"
-              badText="Missing"
-            />
-            <StatusLine
-              label="Store domain"
-              ok={!!authStatus.domain}
-              okText={authStatus.domain ?? ""}
-              badText="Neplatný / chýba"
-            />
-            <StatusLine
-              label="API verzia"
-              ok={authStatus.apiVersion === authStatus.requiredApiVersion}
-              okText={authStatus.apiVersion}
-              badText={`${authStatus.apiVersion} (očak. ${authStatus.requiredApiVersion})`}
-            />
-          </div>
-          <div className="text-xs text-gm-text-muted">
-            Auth mode: <span className="font-mono">{authStatus.authMode}</span>
-            {authStatus.authMode === "partial" && (
-              <span className="ml-2 text-red-600">
-                Nastavené je iba jedno z ID/secret — fail closed.
-              </span>
-            )}
-            {authStatus.authMode === "legacy_admin_token" && (
-              <span className="ml-2 text-amber-700">
-                Používa sa deprecated SHOPIFY_ADMIN_ACCESS_TOKEN fallback.
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <Field
-          label="Store domain"
-          placeholder="moj-shop.myshopify.com"
-          value={form.store_domain}
-          onChange={(v) => setForm({ ...form, store_domain: v })}
-        />
-        <Field
-          label="API verzia (očakávané 2026-07)"
-          value={form.api_version}
-          onChange={(v) => setForm({ ...form, api_version: v })}
-        />
-        <Field
-          label="Storefront access token (voliteľné)"
-          placeholder="shpat_…"
-          secret
-          value={form.storefront_token}
-          onChange={(v) => setForm({ ...form, storefront_token: v })}
-        />
-        <Field
-          label="Webhook secret"
-          secret
-          value={form.webhook_secret}
-          onChange={(v) => setForm({ ...form, webhook_secret: v })}
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={save}
-          disabled={saving}
-          className="rounded-full bg-gm-primary text-white px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50"
-        >
-          {saving ? "Ukladám…" : "Uložiť konfiguráciu"}
-        </button>
-        <button
-          onClick={runTest}
-          disabled={testing}
-          className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
-        >
-          {testing && <Loader2 className="w-4 h-4 animate-spin" />}
-          Test pripojenia
-        </button>
-        {savedMsg && <span className="text-sm text-gm-text-muted self-center">{savedMsg}</span>}
-      </div>
-
-      {result && (
-        <div className="grid gap-3 md:grid-cols-2 text-sm">
-          <ResultRow
-            label={`Admin API (${result.authMode})`}
-            ok={result.ok}
-            detail={
-              result.ok
-                ? `Shop: ${result.shopName ?? "?"} (${result.myshopifyDomain ?? "?"})`
-                : (result.error ?? "Neznáma chyba")
-            }
-          />
-          <ResultRow
-            label={`API verzia (${result.apiVersion})`}
-            ok={result.versionOk}
-            detail={
-              result.versionOk
-                ? `X-Shopify-API-Version: ${result.apiVersionHeader}`
-                : `Header: ${result.apiVersionHeader ?? "chýba"}`
-            }
-          />
-          <ResultRow
-            label="Required scopes"
-            ok={result.missingScopes.length === 0}
-            detail={
-              result.missingScopes.length === 0
-                ? result.scopes.join(", ") || "(žiadne)"
-                : `Chýbajú: ${result.missingScopes.join(", ")}`
-            }
-          />
-        </div>
-      )}
-
-      <div className="border-t border-gm-border pt-4">
-        <div className="text-sm font-medium">Webhook URL pre Shopify Admin</div>
-        <p className="text-xs text-gm-text-muted mt-1">
-          Skopírujte túto URL do <i>Settings → Notifications → Webhooks</i> v Shopify. Topics:
-          products/*, orders/*, customers/*, inventory_levels/update, collections/*.
-        </p>
-        <CopyRow value={`${origin}/api/public/webhooks/shopify`} />
-      </div>
-    </GlassPanel>
   );
 }
 
@@ -385,7 +165,7 @@ function LovableCloudCard() {
         <h2 className="text-lg font-semibold">Lovable Cloud</h2>
         <p className="text-sm text-gm-text-muted mt-1">
           Postgres + edge runtime sú zapnuté automaticky. Tabuľky: integrations, webhook_endpoints,
-          webhook_events, sync_jobs, shopify_product_cache.
+          webhook_events, sync_jobs.
         </p>
       </div>
 
@@ -395,7 +175,7 @@ function LovableCloudCard() {
           <div className="text-sm text-gm-text-muted">Načítavam…</div>
         ) : events.length === 0 ? (
           <div className="text-sm text-gm-text-muted">
-            Zatiaľ žiadne. Po nakonfigurovaní Shopify webhooku sa tu objavia.
+            Zatiaľ žiadne. Po nakonfigurovaní webhooku sa tu objavia.
           </div>
         ) : (
           <div className="overflow-auto rounded-md border border-gm-border">
@@ -667,7 +447,7 @@ const PROVIDER_SCHEMAS: Record<
   custom: {
     label: "Custom Webhook",
     description:
-      "Vlastný relay endpoint, ktorému budeme posielať preposlané Shopify eventy (Fáza 2 — fan-out engine).",
+      "Vlastný relay endpoint, ktorému budeme posielať preposlané WordPress eventy (fan-out engine).",
     fields: [
       { key: "target_url", label: "Target URL", placeholder: "https://hooks.example.com/in" },
       { key: "secret", label: "Shared secret (HMAC)", secret: true },
@@ -813,53 +593,6 @@ function ResultRow({ label, ok, detail }: { label: string; ok: boolean; detail?:
         {label}
       </div>
       {detail && <div className="text-xs mt-1 break-all">{detail}</div>}
-    </div>
-  );
-}
-
-function StatusLine({
-  label,
-  ok,
-  okText,
-  badText,
-}: {
-  label: string;
-  ok: boolean;
-  okText: string;
-  badText: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2 text-xs">
-      <span className="text-gm-text-muted">{label}</span>
-      <span
-        className={`inline-flex items-center gap-1 font-medium ${
-          ok ? "text-green-700" : "text-red-700"
-        }`}
-      >
-        {ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-        <span className="font-mono">{ok ? okText : badText}</span>
-      </span>
-    </div>
-  );
-}
-
-function CopyRow({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="mt-2 flex items-center gap-2">
-      <code className="flex-1 truncate rounded-md border border-gm-border bg-white px-3 py-2 text-xs">
-        {value}
-      </code>
-      <button
-        onClick={async () => {
-          await navigator.clipboard.writeText(value);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }}
-        className="text-xs px-3 py-2 rounded-md border border-gm-border bg-white hover:bg-gm-bg-soft inline-flex items-center gap-1"
-      >
-        <Copy className="w-3.5 h-3.5" /> {copied ? "Skopírované" : "Kopírovať"}
-      </button>
     </div>
   );
 }

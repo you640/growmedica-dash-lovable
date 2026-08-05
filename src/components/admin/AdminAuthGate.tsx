@@ -33,7 +33,7 @@ export function AdminAuthGate({ children }: { children: ReactNode }) {
           setState(
             msg.includes("Forbidden")
               ? { kind: "forbidden", email: user.email ?? "" }
-              : { kind: "anonymous" }
+              : { kind: "anonymous" },
           );
       }
     })();

@@ -3,6 +3,17 @@ import { GlassPanel, SectionHeading } from "@/components/admin/AdminShell";
 import { Package, ShoppingCart, Sparkles, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard — GrowMedica Admin" },
+      {
+        name: "description",
+        content: "Prehľad WordPress integrácie, webhookov a modulov GrowMedica Admin.",
+      },
+      { property: "og:title", content: "Dashboard — GrowMedica Admin" },
+      { property: "og:description", content: "Prehľad WordPress integrácie a modulov." },
+    ],
+  }),
   component: AdminHome,
 });
 
@@ -11,7 +22,7 @@ function AdminHome() {
     <div>
       <SectionHeading
         title="Vitajte v GrowMedica Admin"
-        subtitle="Headless command center pre Shopify + Lovable Cloud. Fáza 1 — autentifikácia, integrácie a webhook log sú aktívne."
+        subtitle="Headless command center pre WordPress + Lovable Cloud. Fáza 1 — autentifikácia, integrácie a webhook log sú aktívne."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -33,16 +44,32 @@ function AdminHome() {
       </div>
 
       <div className="mt-8 grid gap-3 md:grid-cols-4">
-        <Quick to="/admin/produkty" icon={<Package className="w-4 h-4" />}>Nový produkt</Quick>
-        <Quick to="/admin/produkty" icon={<Sparkles className="w-4 h-4" />}>AI Optimalizácia</Quick>
-        <Quick to="/admin/objednavky" icon={<ShoppingCart className="w-4 h-4" />}>Objednávky</Quick>
-        <Quick to="/admin/nastavenia" icon={<Settings className="w-4 h-4" />}>Integrácie</Quick>
+        <Quick to="/admin/produkty" icon={<Package className="w-4 h-4" />}>
+          Nový produkt
+        </Quick>
+        <Quick to="/admin/produkty" icon={<Sparkles className="w-4 h-4" />}>
+          AI Optimalizácia
+        </Quick>
+        <Quick to="/admin/objednavky" icon={<ShoppingCart className="w-4 h-4" />}>
+          Objednávky
+        </Quick>
+        <Quick to="/admin/nastavenia" icon={<Settings className="w-4 h-4" />}>
+          Integrácie
+        </Quick>
       </div>
     </div>
   );
 }
 
-function Quick({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Quick({
+  to,
+  icon,
+  children,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       to={to}

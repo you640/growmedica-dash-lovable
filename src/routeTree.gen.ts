@@ -19,7 +19,6 @@ import { Route as AdminObjednavkyRouteImport } from './routes/admin/objednavky'
 import { Route as AdminNastaveniaRouteImport } from './routes/admin/nastavenia'
 import { Route as AdminAnalytikaRouteImport } from './routes/admin/analytika'
 import { Route as AdminAiRouteImport } from './routes/admin/ai'
-import { Route as ApiPublicWebhooksShopifyRouteImport } from './routes/api/public/webhooks/shopify'
 
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
@@ -71,12 +70,6 @@ const AdminAiRoute = AdminAiRouteImport.update({
   path: '/ai',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const ApiPublicWebhooksShopifyRoute =
-  ApiPublicWebhooksShopifyRouteImport.update({
-    id: '/api/public/webhooks/shopify',
-    path: '/api/public/webhooks/shopify',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,7 +82,6 @@ export interface FileRoutesByFullPath {
   '/admin/produkty': typeof AdminProduktyRoute
   '/admin/zakaznici': typeof AdminZakazniciRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/public/webhooks/shopify': typeof ApiPublicWebhooksShopifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,7 +93,6 @@ export interface FileRoutesByTo {
   '/admin/produkty': typeof AdminProduktyRoute
   '/admin/zakaznici': typeof AdminZakazniciRoute
   '/admin': typeof AdminIndexRoute
-  '/api/public/webhooks/shopify': typeof ApiPublicWebhooksShopifyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,7 +106,6 @@ export interface FileRoutesById {
   '/admin/produkty': typeof AdminProduktyRoute
   '/admin/zakaznici': typeof AdminZakazniciRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/public/webhooks/shopify': typeof ApiPublicWebhooksShopifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,7 +120,6 @@ export interface FileRouteTypes {
     | '/admin/produkty'
     | '/admin/zakaznici'
     | '/admin/'
-    | '/api/public/webhooks/shopify'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,7 +131,6 @@ export interface FileRouteTypes {
     | '/admin/produkty'
     | '/admin/zakaznici'
     | '/admin'
-    | '/api/public/webhooks/shopify'
   id:
     | '__root__'
     | '/'
@@ -155,13 +143,11 @@ export interface FileRouteTypes {
     | '/admin/produkty'
     | '/admin/zakaznici'
     | '/admin/'
-    | '/api/public/webhooks/shopify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
-  ApiPublicWebhooksShopifyRoute: typeof ApiPublicWebhooksShopifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -236,13 +222,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAiRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/api/public/webhooks/shopify': {
-      id: '/api/public/webhooks/shopify'
-      path: '/api/public/webhooks/shopify'
-      fullPath: '/api/public/webhooks/shopify'
-      preLoaderRoute: typeof ApiPublicWebhooksShopifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -275,18 +254,7 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
-  ApiPublicWebhooksShopifyRoute: ApiPublicWebhooksShopifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

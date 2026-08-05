@@ -45,17 +45,15 @@ export const upsertIntegrationConfig = createServerFn({ method: "POST" })
     const { assertAdmin } = await import("./admin-guard.server");
     assertAdmin(context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("integrations")
-      .upsert(
-        {
-          provider: data.provider,
-          name: data.name,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          config: data.config as any,
-        },
-        { onConflict: "provider,name" }
-      );
+    const { error } = await supabaseAdmin.from("integrations").upsert(
+      {
+        provider: data.provider,
+        name: data.name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        config: data.config as any,
+      },
+      { onConflict: "provider,name" },
+    );
     if (error) {
       console.error("[db:upsertIntegration]", error);
       throw new Error("Uloženie konfigurácie zlyhalo.");

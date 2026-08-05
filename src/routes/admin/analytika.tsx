@@ -3,6 +3,14 @@ import { PhaseStub } from "@/components/admin/PhaseStub";
 import { BarChart3 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/analytika")({
+  head: () => ({
+    meta: [
+      { title: "Analytika — GrowMedica Admin" },
+      { name: "description", content: "Tržby, konverzie, SEO výkon a AI insights pre GrowMedica." },
+      { property: "og:title", content: "Analytika — GrowMedica Admin" },
+      { property: "og:description", content: "Tržby, konverzie a SEO výkon na jednej obrazovke." },
+    ],
+  }),
   component: () => (
     <PhaseStub
       title="Analytika"
