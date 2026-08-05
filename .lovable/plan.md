@@ -1,78 +1,32 @@
-## Plán
+# Odstránenie Shopify + prechod na WordPress/WooCommerce
 
-### 1. ADMIN_EMAILS secret
+Cieľ: appka bude mať jediné e-commerce/CMS napojenie — WordPress (vrátane WooCommerce REST). Všetok Shopify kód, UI, webhook a DB stopy sa odstránia. Projekt sa dotiahne do produkčného stavu.
 
-Otvorím secret formulár pre `ADMIN_EMAILS` cez `secrets--update_secret` (alebo `add_secret` ak neexistuje). Vy zadáte hodnotu:
+## 1. Zmazať Shopify
+- Súbory na odstránenie: `src/lib/shopify.functions.ts`, `src/lib/shopify-client.server.ts`, `src/routes/api/public/webhooks/shopify.ts`.
+- `src/components/admin/ShopifyDataPage.tsx` → premenovať na `DataPage.tsx`, texty ("Načítavam z Shopify…", CTA "Pripojiť Shopify") prepísať na WordPress/WooCommerce.
+- `src/routes/admin/nastavenia.tsx`: odstrániť záložku Shopify, `ShopifyCard`, stavy secrets (SHOPIFY_*), webhook URL blok a zmienky v podtituloch; WordPress sa stane predvolenou záložkou.
+- `src/routes/admin/index.tsx`, `produkty.tsx`, `objednavky.tsx`, `zakaznici.tsx`, `PhaseStub.tsx`, `__root.tsx`: prepnúť na WooCommerce server funkcie a prepísať slovenské texty.
+- `.env.example`: vymazať sekciu Shopify.
 
-```
-erikbabcan@gmail.com,u0352652320@gmail.com,Kajo.Szaffko@gmail.com
-```
+## 2. Presun typov
+`src/lib/woocommerce.functions.ts` dnes importuje typy zo Shopify súboru. Typy (`Product`, `Order`, `Customer`, `ListResult`, `DashboardSummary`) sa presunú do `src/lib/commerce-types.ts` a woocommerce súbor sa na ne prepojí.
 
-Server fn `verifyAdminAccess` už parsuje CSV podľa čiarky, takže žiadna zmena kódu netreba.
+## 3. Napojenie dát
+- Dashboard `/admin` → `getWooCommerceDashboardSummary`
+- `/admin/produkty` → `listWooCommerceProducts`
+- `/admin/objednavky` → `listWooCommerceOrders`
+- `/admin/zakaznici` → `listWooCommerceCustomers`
+- Nastavenia → WordPress karta zostáva (test pripojenia, posledné príspevky) + doplní sa stavový chip pre WooCommerce credentials.
 
-### 2. Ikony z `gqqqimage.png`
+## 4. Databáza
+Migrácia, ktorá zruší `shopify_product_cache` a vyčistí riadky `integrations`/`webhook_events` s providerom shopify. Ostatné tabuľky (`integrations`, `webhook_endpoints`, `webhook_events`, `sync_jobs`) zostávajú. Následne sa regenerujú typy.
 
-Zdroj: `/mnt/user-uploads/gqqqimage.png` (1024×1024, zelený list v zlatom prsteni, priehľadné pozadie).
+## 5. Produkčný stav
+- Oprava runtime chyby "Unauthorized: No authorization header provided" — chránené server funkcie sa nesmú volať pred prihlásením (volanie až po potvrdenej session v admin gate).
+- Doplniť/skontrolovať `head()` metadata pre všetky admin routy.
+- Typecheck, lint, build, bezpečnostný sken a DB linter.
+- Publikovanie po schválení.
 
-Vygenerujem cez ImageMagick (`nix run nixpkgs#imagemagick`) do `public/`:
-
-- `favicon.ico` (multi-size 16/32/48)
-- `favicon-16.png`, `favicon-32.png`
-- `apple-touch-icon.png` (180×180, iOS home-screen)
-- `icon-192.png`, `icon-512.png` (Android PWA, oba `any` aj `maskable` variant: `icon-192-maskable.png`, `icon-512-maskable.png` s ~10% safe-area paddingom a tmavým pozadím)
-- `og-image.png` (1200×630 pre social share — voliteľne)
-
-### 3. Web app manifest (PWA install — manifest-only, bez service workera)
-
-Vytvorím `public/manifest.webmanifest`:
-
-```json
-{
-  "name": "GrowMedica Admin",
-  "short_name": "GrowMedica",
-  "start_url": "/admin",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#FDFBF7",
-  "theme_color": "#1f3a1f",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    {
-      "src": "/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ]
-}
-```
-
-Bez service workera — používateľ nepýtal offline, len ikonu/inštaláciu na home-screen.
-
-### 4. Head tagy v `src/routes/__root.tsx`
-
-Do `head().links` doplním:
-
-- `rel="icon"` → `/favicon.ico` (rieši 404)
-- `rel="icon" type="image/png" sizes="32x32"` → `/favicon-32.png`
-- `rel="apple-touch-icon" sizes="180x180"` → `/apple-touch-icon.png`
-- `rel="manifest"` → `/manifest.webmanifest`
-
-Do `head().meta` doplním `theme-color #1f3a1f`.
-
-### 5. Verifikácia
-
-- Build prejde, `/favicon.ico` 200, manifest validný, ikony viditeľné v DevTools → Application → Manifest.
-
-Schváľ a prepnem do build mode.
-
-- nahradit aktualny signn in - google sign i od loveable a apple sign in impleentovat tiez !
-
-&nbsp;
+## Poznámka
+Na živé dáta produktov/objednávok/zákazníkov musia byť nastavené `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`. Ak ešte nie sú, stránky ukážu prázdny stav s výzvou na doplnenie.
