@@ -61,9 +61,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <div className="text-2xl font-semibold tracking-tight">
             Grow<span className="text-gm-primary">Medica</span>
           </div>
-          <div className="text-xs uppercase tracking-widest text-gm-text-muted mt-1">
-            Admin
-          </div>
+          <div className="text-xs uppercase tracking-widest text-gm-text-muted mt-1">Admin</div>
         </div>
         {NavList}
         <div className="p-4 border-t border-gm-border text-xs text-gm-text-muted">
@@ -126,9 +124,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto bg-gm-bg-soft/30 p-4 md:p-8">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto bg-gm-bg-soft/30 p-4 md:p-8">{children}</div>
       </main>
     </div>
   );
@@ -150,19 +146,11 @@ export function GlassPanel({
   );
 }
 
-export function SectionHeading({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: string;
-}) {
+export function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-6">
       <h1 className="text-2xl font-semibold tracking-tight text-gm-text">{title}</h1>
-      {subtitle && (
-        <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">{subtitle}</p>}
     </div>
   );
 }

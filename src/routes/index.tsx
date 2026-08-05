@@ -6,7 +6,10 @@ export const Route = createFileRoute("/")({
       { title: "GrowMedica Admin" },
       { name: "description", content: "Headless commerce command center pre GrowMedica / NOOR." },
       { property: "og:title", content: "GrowMedica Admin" },
-      { property: "og:description", content: "Headless commerce command center pre GrowMedica / NOOR." },
+      {
+        property: "og:description",
+        content: "Headless commerce command center pre GrowMedica / NOOR.",
+      },
     ],
   }),
   component: Index,

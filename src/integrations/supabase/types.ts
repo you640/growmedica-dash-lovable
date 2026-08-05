@@ -1,298 +1,290 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       integrations: {
         Row: {
-          config: Json
-          created_at: string
-          id: string
-          is_active: boolean
-          last_error: string | null
-          last_tested_at: string | null
-          name: string
-          provider: string
-          status: string
-          updated_at: string
-        }
+          config: Json;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          last_error: string | null;
+          last_tested_at: string | null;
+          name: string;
+          provider: string;
+          status: string;
+          updated_at: string;
+        };
         Insert: {
-          config?: Json
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_error?: string | null
-          last_tested_at?: string | null
-          name: string
-          provider: string
-          status?: string
-          updated_at?: string
-        }
+          config?: Json;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          last_error?: string | null;
+          last_tested_at?: string | null;
+          name: string;
+          provider: string;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          config?: Json
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_error?: string | null
-          last_tested_at?: string | null
-          name?: string
-          provider?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          config?: Json;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          last_error?: string | null;
+          last_tested_at?: string | null;
+          name?: string;
+          provider?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       sync_jobs: {
         Row: {
-          created_at: string
-          finished_at: string | null
-          id: string
-          job_type: string
-          progress: number
-          provider: string
-          result: Json | null
-          started_at: string | null
-          status: string
-          total: number
-        }
+          created_at: string;
+          finished_at: string | null;
+          id: string;
+          job_type: string;
+          progress: number;
+          provider: string;
+          result: Json | null;
+          started_at: string | null;
+          status: string;
+          total: number;
+        };
         Insert: {
-          created_at?: string
-          finished_at?: string | null
-          id?: string
-          job_type: string
-          progress?: number
-          provider: string
-          result?: Json | null
-          started_at?: string | null
-          status?: string
-          total?: number
-        }
+          created_at?: string;
+          finished_at?: string | null;
+          id?: string;
+          job_type: string;
+          progress?: number;
+          provider: string;
+          result?: Json | null;
+          started_at?: string | null;
+          status?: string;
+          total?: number;
+        };
         Update: {
-          created_at?: string
-          finished_at?: string | null
-          id?: string
-          job_type?: string
-          progress?: number
-          provider?: string
-          result?: Json | null
-          started_at?: string | null
-          status?: string
-          total?: number
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          finished_at?: string | null;
+          id?: string;
+          job_type?: string;
+          progress?: number;
+          provider?: string;
+          result?: Json | null;
+          started_at?: string | null;
+          status?: string;
+          total?: number;
+        };
+        Relationships: [];
+      };
       webhook_endpoints: {
         Row: {
-          created_at: string
-          events: string[]
-          framework: string | null
-          id: string
-          is_active: boolean
-          name: string
-          secret_hash: string | null
-          target_url: string
-        }
+          created_at: string;
+          events: string[];
+          framework: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          secret_hash: string | null;
+          target_url: string;
+        };
         Insert: {
-          created_at?: string
-          events: string[]
-          framework?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          secret_hash?: string | null
-          target_url: string
-        }
+          created_at?: string;
+          events: string[];
+          framework?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          secret_hash?: string | null;
+          target_url: string;
+        };
         Update: {
-          created_at?: string
-          events?: string[]
-          framework?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          secret_hash?: string | null
-          target_url?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          events?: string[];
+          framework?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          secret_hash?: string | null;
+          target_url?: string;
+        };
+        Relationships: [];
+      };
       webhook_events: {
         Row: {
-          created_at: string
-          error: string | null
-          id: string
-          payload: Json | null
-          relayed_to: string[] | null
-          source: string
-          status: string
-          topic: string
-        }
+          created_at: string;
+          error: string | null;
+          id: string;
+          payload: Json | null;
+          relayed_to: string[] | null;
+          source: string;
+          status: string;
+          topic: string;
+        };
         Insert: {
-          created_at?: string
-          error?: string | null
-          id?: string
-          payload?: Json | null
-          relayed_to?: string[] | null
-          source: string
-          status?: string
-          topic: string
-        }
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          payload?: Json | null;
+          relayed_to?: string[] | null;
+          source: string;
+          status?: string;
+          topic: string;
+        };
         Update: {
-          created_at?: string
-          error?: string | null
-          id?: string
-          payload?: Json | null
-          relayed_to?: string[] | null
-          source?: string
-          status?: string
-          topic?: string
-        }
-        Relationships: []
-      }
-    }
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          payload?: Json | null;
+          relayed_to?: string[] | null;
+          source?: string;
+          status?: string;
+          topic?: string;
+        };
+        Relationships: [];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
     Enums: {},
   },
-} as const
+} as const;

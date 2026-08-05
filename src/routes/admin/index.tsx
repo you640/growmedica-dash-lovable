@@ -44,16 +44,32 @@ function AdminHome() {
       </div>
 
       <div className="mt-8 grid gap-3 md:grid-cols-4">
-        <Quick to="/admin/produkty" icon={<Package className="w-4 h-4" />}>Nový produkt</Quick>
-        <Quick to="/admin/produkty" icon={<Sparkles className="w-4 h-4" />}>AI Optimalizácia</Quick>
-        <Quick to="/admin/objednavky" icon={<ShoppingCart className="w-4 h-4" />}>Objednávky</Quick>
-        <Quick to="/admin/nastavenia" icon={<Settings className="w-4 h-4" />}>Integrácie</Quick>
+        <Quick to="/admin/produkty" icon={<Package className="w-4 h-4" />}>
+          Nový produkt
+        </Quick>
+        <Quick to="/admin/produkty" icon={<Sparkles className="w-4 h-4" />}>
+          AI Optimalizácia
+        </Quick>
+        <Quick to="/admin/objednavky" icon={<ShoppingCart className="w-4 h-4" />}>
+          Objednávky
+        </Quick>
+        <Quick to="/admin/nastavenia" icon={<Settings className="w-4 h-4" />}>
+          Integrácie
+        </Quick>
       </div>
     </div>
   );
 }
 
-function Quick({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Quick({
+  to,
+  icon,
+  children,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       to={to}

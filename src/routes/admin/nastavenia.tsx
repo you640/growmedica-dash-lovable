@@ -596,5 +596,3 @@ function ResultRow({ label, ok, detail }: { label: string; ok: boolean; detail?:
     </div>
   );
 }
-
-
