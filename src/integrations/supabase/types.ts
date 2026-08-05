@@ -53,42 +53,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shopify_product_cache: {
-        Row: {
-          currency: string | null
-          handle: string | null
-          image_url: string | null
-          metafields: Json | null
-          price_amount: number | null
-          shopify_id: string
-          status: string | null
-          synced_at: string
-          title: string | null
-        }
-        Insert: {
-          currency?: string | null
-          handle?: string | null
-          image_url?: string | null
-          metafields?: Json | null
-          price_amount?: number | null
-          shopify_id: string
-          status?: string | null
-          synced_at?: string
-          title?: string | null
-        }
-        Update: {
-          currency?: string | null
-          handle?: string | null
-          image_url?: string | null
-          metafields?: Json | null
-          price_amount?: number | null
-          shopify_id?: string
-          status?: string | null
-          synced_at?: string
-          title?: string | null
-        }
-        Relationships: []
-      }
       sync_jobs: {
         Row: {
           created_at: string
