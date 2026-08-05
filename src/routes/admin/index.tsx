@@ -3,6 +3,17 @@ import { GlassPanel, SectionHeading } from "@/components/admin/AdminShell";
 import { Package, ShoppingCart, Sparkles, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard — GrowMedica Admin" },
+      {
+        name: "description",
+        content: "Prehľad WordPress integrácie, webhookov a modulov GrowMedica Admin.",
+      },
+      { property: "og:title", content: "Dashboard — GrowMedica Admin" },
+      { property: "og:description", content: "Prehľad WordPress integrácie a modulov." },
+    ],
+  }),
   component: AdminHome,
 });
 
@@ -11,7 +22,7 @@ function AdminHome() {
     <div>
       <SectionHeading
         title="Vitajte v GrowMedica Admin"
-        subtitle="Headless command center pre Shopify + Lovable Cloud. Fáza 1 — autentifikácia, integrácie a webhook log sú aktívne."
+        subtitle="Headless command center pre WordPress + Lovable Cloud. Fáza 1 — autentifikácia, integrácie a webhook log sú aktívne."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
