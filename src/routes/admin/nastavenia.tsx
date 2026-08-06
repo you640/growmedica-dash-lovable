@@ -9,6 +9,7 @@ import {
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
 import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
+import { WpRelayCard } from "@/components/admin/WpRelayCard";
 import {
   CheckCircle2,
   XCircle,
@@ -123,7 +124,12 @@ function SettingsPage() {
 
         <div>
           {tab === "lovable_cloud" && <LovableCloudCard />}
-          {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
+          {tab === "wordpress" && (
+            <div className="space-y-6">
+              <WordPressCard onSaved={refresh} />
+              <WpRelayCard />
+            </div>
+          )}
           {tab !== "lovable_cloud" && tab !== "wordpress" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}
