@@ -15,7 +15,11 @@ export type WpCallResult<T = unknown> = {
 };
 
 export function hasWordPressConnection(): boolean {
-  return !!process.env.LOVABLE_API_KEY?.trim() && !!process.env.WORDPRESS_API_KEY?.trim();
+  const hasLovableConnector =
+    !!process.env.LOVABLE_API_KEY?.trim() && !!process.env.WORDPRESS_API_KEY?.trim();
+  const hasDirectStore = !!process.env.WOOCOMMERCE_STORE_URL?.trim();
+  const hasDb = !!process.env.WP_DB_HOST?.trim();
+  return hasLovableConnector || hasDirectStore || hasDb;
 }
 
 export async function wpFetch<T = unknown>(
@@ -24,21 +28,37 @@ export async function wpFetch<T = unknown>(
 ): Promise<WpCallResult<T>> {
   const lovableKey = process.env.LOVABLE_API_KEY?.trim();
   const connKey = process.env.WORDPRESS_API_KEY?.trim();
-  if (!lovableKey || !connKey) {
-    throw new Error("WordPress connector nie je pripojený (chýba connection key).");
-  }
+  const storeUrl = process.env.WOOCOMMERCE_STORE_URL?.trim().replace(/\/$/, "");
+  const ck = process.env.WOOCOMMERCE_CONSUMER_KEY?.trim();
+  const cs = process.env.WOOCOMMERCE_CONSUMER_SECRET?.trim();
 
-  const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(init.query ?? {})) qs.set(k, String(v));
-  const url = `${GATEWAY_URL}${path}${qs.toString() ? `?${qs.toString()}` : ""}`;
+  let url: string;
+  const headers: Record<string, string> = {
+    ...(init.body ? { "Content-Type": "application/json" } : {}),
+  };
+
+  if (lovableKey && connKey) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(init.query ?? {})) qs.set(k, String(v));
+    url = `${GATEWAY_URL}${path}${qs.toString() ? `?${qs.toString()}` : ""}`;
+    headers["Authorization"] = `Bearer ${lovableKey}`;
+    headers["X-Connection-Api-Key"] = connKey;
+  } else if (storeUrl) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(init.query ?? {})) qs.set(k, String(v));
+    url = `${storeUrl}/wp-json/wp/v2${path}${qs.toString() ? `?${qs.toString()}` : ""}`;
+    if (ck && cs) {
+      headers["Authorization"] = `Basic ${Buffer.from(`${ck}:${cs}`).toString("base64")}`;
+    }
+  } else {
+    throw new Error(
+      "WordPress konektor nie je pripojený (chýba LOVABLE_API_KEY alebo WOOCOMMERCE_STORE_URL).",
+    );
+  }
 
   const res = await fetch(url, {
     method: init.method ?? "GET",
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": connKey,
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-    },
+    headers,
     ...(init.body ? { body: JSON.stringify(init.body) } : {}),
   });
 
