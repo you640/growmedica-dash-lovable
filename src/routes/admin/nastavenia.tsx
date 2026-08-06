@@ -8,13 +8,16 @@ import {
   upsertIntegrationConfig,
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
-import { testShopifyConnection, getShopifyAuthStatus } from "@/lib/shopify.functions";
-import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
+import {
+  testWordPressConnection,
+  listWordPressPosts,
+  listWordPressPlugins,
+  type WpPlugin,
+} from "@/lib/wordpress.functions";
 import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Plug,
   Database,
   Cloud,
   Flame,
@@ -30,7 +33,6 @@ export const Route = createFileRoute("/admin/nastavenia")({
 });
 
 const PROVIDERS = [
-  { id: "shopify", label: "Shopify", icon: Plug },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
   { id: "firebase", label: "Firebase", icon: Flame },
@@ -62,7 +64,7 @@ function StatusDot({ status }: { status?: string | null }) {
 }
 
 function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("shopify");
+  const [tab, setTab] = useState<Tab>("lovable_cloud");
   const listFn = useServerFn(listIntegrations);
   const [integrations, setIntegrations] = useState<IntegrationRow[]>([]);
 
@@ -82,7 +84,7 @@ function SettingsPage() {
     <div>
       <SectionHeading
         title="Integration Hub"
-        subtitle="Pripojte Shopify, Lovable Cloud, Vercel, Firebase, Mistral, GCP, WordPress a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
+        subtitle="Pripojte Lovable Cloud, Vercel, Firebase, Mistral, GCP, WordPress a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
       />
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -96,7 +98,7 @@ function SettingsPage() {
                 onClick={() => setTab(p.id)}
                 className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm transition ${
                   active
-                    ? "bg-[var(--gm-primary)]/10 text-gm-text"
+                    ? "bg-(--gm-primary)/10 text-gm-text"
                     : "text-gm-text-muted hover:bg-gm-bg-soft hover:text-gm-text"
                 }`}
               >
@@ -111,245 +113,14 @@ function SettingsPage() {
         </GlassPanel>
 
         <div>
-          {tab === "shopify" && <ShopifyCard onSaved={refresh} />}
           {tab === "lovable_cloud" && <LovableCloudCard />}
           {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
-          {tab !== "shopify" && tab !== "lovable_cloud" && tab !== "wordpress" && (
+          {tab !== "lovable_cloud" && tab !== "wordpress" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function ShopifyCard({ onSaved }: { onSaved: () => void }) {
-  const upsert = useServerFn(upsertIntegrationConfig);
-  const test = useServerFn(testShopifyConnection);
-  const authStatusFn = useServerFn(getShopifyAuthStatus);
-
-  const [form, setForm] = useState({
-    store_domain: "",
-    api_version: "2026-07",
-    storefront_token: "",
-    webhook_secret: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  type TestResult = Awaited<ReturnType<typeof test>>;
-  const [result, setResult] = useState<TestResult | null>(null);
-  const [savedMsg, setSavedMsg] = useState<string | null>(null);
-  type AuthStatus = Awaited<ReturnType<typeof authStatusFn>>;
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-
-  useEffect(() => {
-    authStatusFn()
-      .then((s) => setAuthStatus(s))
-      .catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function save() {
-    setSaving(true);
-    setSavedMsg(null);
-    try {
-      const config: Record<string, string> = { api_version: form.api_version };
-      for (const k of ["store_domain", "storefront_token", "webhook_secret"] as const) {
-        if (form[k]) config[k] = form[k];
-      }
-      await upsert({
-        data: { provider: "shopify", name: "default", config },
-      });
-      setSavedMsg("Uložené.");
-      toast.success("Konfigurácia Shopify uložená.");
-      onSaved();
-      authStatusFn()
-        .then(setAuthStatus)
-        .catch(() => undefined);
-    } catch (e) {
-      setSavedMsg(`Chyba: ${(e as Error).message}`);
-      toast.error(`Chyba: ${(e as Error).message}`);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function runTest() {
-    setTesting(true);
-    setResult(null);
-    try {
-      const r = await test();
-      setResult(r);
-      if (r.ok) {
-        toast.success(`Pripojené: ${r.shopName ?? r.myshopifyDomain ?? "OK"}`);
-      } else {
-        toast.error(r.error ?? "Test pripojenia zlyhal.");
-      }
-      onSaved();
-    } catch (e) {
-      setResult({
-        ok: false,
-        domain: null,
-        apiVersion: form.api_version,
-        apiVersionHeader: null,
-        versionOk: false,
-        shopName: null,
-        myshopifyDomain: null,
-        scopes: [],
-        missingScopes: ["read_products", "write_products", "read_inventory", "write_inventory"],
-        authMode: "none",
-        error: (e as Error).message,
-      } as TestResult);
-      toast.error((e as Error).message);
-    } finally {
-      setTesting(false);
-    }
-  }
-
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://your-app";
-
-  return (
-    <GlassPanel className="p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">Shopify</h2>
-        <p className="text-sm text-gm-text-muted mt-1">
-          Admin API 2026-07 cez server-side client credentials. Client ID a client secret sa
-          nastavujú výlučne ako Lovable Cloud secrets — v UI ich nikdy neukladáme ani nezobrazujeme.
-          Storefront token je voliteľný.
-        </p>
-      </div>
-
-      {authStatus && (
-        <div className="rounded-md border border-gm-border bg-white/60 p-4 text-sm space-y-2">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <StatusLine
-              label="SHOPIFY_CLIENT_ID"
-              ok={authStatus.hasClientId}
-              okText="Configured"
-              badText="Missing"
-            />
-            <StatusLine
-              label="SHOPIFY_CLIENT_SECRET"
-              ok={authStatus.hasClientSecret}
-              okText="Configured"
-              badText="Missing"
-            />
-            <StatusLine
-              label="Store domain"
-              ok={!!authStatus.domain}
-              okText={authStatus.domain ?? ""}
-              badText="Neplatný / chýba"
-            />
-            <StatusLine
-              label="API verzia"
-              ok={authStatus.apiVersion === authStatus.requiredApiVersion}
-              okText={authStatus.apiVersion}
-              badText={`${authStatus.apiVersion} (očak. ${authStatus.requiredApiVersion})`}
-            />
-          </div>
-          <div className="text-xs text-gm-text-muted">
-            Auth mode: <span className="font-mono">{authStatus.authMode}</span>
-            {authStatus.authMode === "partial" && (
-              <span className="ml-2 text-red-600">
-                Nastavené je iba jedno z ID/secret — fail closed.
-              </span>
-            )}
-            {authStatus.authMode === "legacy_admin_token" && (
-              <span className="ml-2 text-amber-700">
-                Používa sa deprecated SHOPIFY_ADMIN_ACCESS_TOKEN fallback.
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <Field
-          label="Store domain"
-          placeholder="moj-shop.myshopify.com"
-          value={form.store_domain}
-          onChange={(v) => setForm({ ...form, store_domain: v })}
-        />
-        <Field
-          label="API verzia (očakávané 2026-07)"
-          value={form.api_version}
-          onChange={(v) => setForm({ ...form, api_version: v })}
-        />
-        <Field
-          label="Storefront access token (voliteľné)"
-          placeholder="shpat_…"
-          secret
-          value={form.storefront_token}
-          onChange={(v) => setForm({ ...form, storefront_token: v })}
-        />
-        <Field
-          label="Webhook secret"
-          secret
-          value={form.webhook_secret}
-          onChange={(v) => setForm({ ...form, webhook_secret: v })}
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={save}
-          disabled={saving}
-          className="rounded-full bg-gm-primary text-white px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50"
-        >
-          {saving ? "Ukladám…" : "Uložiť konfiguráciu"}
-        </button>
-        <button
-          onClick={runTest}
-          disabled={testing}
-          className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
-        >
-          {testing && <Loader2 className="w-4 h-4 animate-spin" />}
-          Test pripojenia
-        </button>
-        {savedMsg && <span className="text-sm text-gm-text-muted self-center">{savedMsg}</span>}
-      </div>
-
-      {result && (
-        <div className="grid gap-3 md:grid-cols-2 text-sm">
-          <ResultRow
-            label={`Admin API (${result.authMode})`}
-            ok={result.ok}
-            detail={
-              result.ok
-                ? `Shop: ${result.shopName ?? "?"} (${result.myshopifyDomain ?? "?"})`
-                : (result.error ?? "Neznáma chyba")
-            }
-          />
-          <ResultRow
-            label={`API verzia (${result.apiVersion})`}
-            ok={result.versionOk}
-            detail={
-              result.versionOk
-                ? `X-Shopify-API-Version: ${result.apiVersionHeader}`
-                : `Header: ${result.apiVersionHeader ?? "chýba"}`
-            }
-          />
-          <ResultRow
-            label="Required scopes"
-            ok={result.missingScopes.length === 0}
-            detail={
-              result.missingScopes.length === 0
-                ? result.scopes.join(", ") || "(žiadne)"
-                : `Chýbajú: ${result.missingScopes.join(", ")}`
-            }
-          />
-        </div>
-      )}
-
-      <div className="border-t border-gm-border pt-4">
-        <div className="text-sm font-medium">Webhook URL pre Shopify Admin</div>
-        <p className="text-xs text-gm-text-muted mt-1">
-          Skopírujte túto URL do <i>Settings → Notifications → Webhooks</i> v Shopify. Topics:
-          products/*, orders/*, customers/*, inventory_levels/update, collections/*.
-        </p>
-        <CopyRow value={`${origin}/api/public/webhooks/shopify`} />
-      </div>
-    </GlassPanel>
   );
 }
 
@@ -385,17 +156,17 @@ function LovableCloudCard() {
         <h2 className="text-lg font-semibold">Lovable Cloud</h2>
         <p className="text-sm text-gm-text-muted mt-1">
           Postgres + edge runtime sú zapnuté automaticky. Tabuľky: integrations, webhook_endpoints,
-          webhook_events, sync_jobs, shopify_product_cache.
+          webhook_events, sync_jobs.
         </p>
       </div>
 
-      <div>
-        <div className="text-sm font-medium mb-2">Posledné webhook eventy</div>
+      <div className="space-y-3">
+        <div className="text-sm font-medium">Posledné Webhook Eventy (max 50)</div>
         {loading ? (
           <div className="text-sm text-gm-text-muted">Načítavam…</div>
         ) : events.length === 0 ? (
           <div className="text-sm text-gm-text-muted">
-            Zatiaľ žiadne. Po nakonfigurovaní Shopify webhooku sa tu objavia.
+            Zatiaľ žiadne. Po nakonfigurovaní webhooku sa tu objavia.
           </div>
         ) : (
           <div className="overflow-auto rounded-md border border-gm-border">
@@ -443,6 +214,7 @@ function LovableCloudCard() {
 function WordPressCard({ onSaved }: { onSaved: () => void }) {
   const test = useServerFn(testWordPressConnection);
   const listPosts = useServerFn(listWordPressPosts);
+  const listPlugins = useServerFn(listWordPressPlugins);
   type TestResult = Awaited<ReturnType<typeof test>>;
   type PostsResult = Awaited<ReturnType<typeof listPosts>>;
 
@@ -450,6 +222,8 @@ function WordPressCard({ onSaved }: { onSaved: () => void }) {
   const [result, setResult] = useState<TestResult | null>(null);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [posts, setPosts] = useState<PostsResult["posts"]>([]);
+  const [loadingPlugins, setLoadingPlugins] = useState(false);
+  const [plugins, setPlugins] = useState<WpPlugin[]>([]);
 
   async function runTest() {
     setTesting(true);
@@ -480,14 +254,27 @@ function WordPressCard({ onSaved }: { onSaved: () => void }) {
     }
   }
 
+  async function loadPlugins() {
+    setLoadingPlugins(true);
+    try {
+      const r = await listPlugins();
+      setPlugins(r.plugins);
+      if (r.error) toast.error(`Načítanie pluginov zlyhalo: ${r.error}`);
+      else toast.success(`Načítaných ${r.plugins.length} aktívnych pluginov.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoadingPlugins(false);
+    }
+  }
+
   return (
     <GlassPanel className="p-6 space-y-6">
       <div>
         <h2 className="text-lg font-semibold">WordPress</h2>
         <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">
-          Self-hosted WordPress REST API (<span className="font-mono">/wp-json/wp/v2</span>) cez
-          Lovable konektor. Site URL a Application Password sú uložené v konektore — v aplikácii
-          nikdy neopúšťajú server.
+          Self-hosted WordPress & WooCommerce databáza (MySQL) a REST API. Dáta o produktoch,
+          objednávkach a zákazníkoch sa načítavajú naživo.
         </p>
       </div>
 
@@ -506,7 +293,15 @@ function WordPressCard({ onSaved }: { onSaved: () => void }) {
           className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
         >
           {loadingPosts && <Loader2 className="w-4 h-4 animate-spin" />}
-          Načítať posledné príspevky
+          Načítať príspevky
+        </button>
+        <button
+          onClick={loadPlugins}
+          disabled={loadingPlugins}
+          className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
+        >
+          {loadingPlugins && <Loader2 className="w-4 h-4 animate-spin" />}
+          Zobraziť pluginy
         </button>
       </div>
 
@@ -578,6 +373,32 @@ function WordPressCard({ onSaved }: { onSaved: () => void }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {plugins.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Aktívne WordPress Pluginy ({plugins.length})</div>
+          <div className="overflow-auto rounded-md border border-gm-border">
+            <table className="w-full text-xs">
+              <thead className="bg-gm-bg-soft text-gm-text-muted">
+                <tr>
+                  <th className="text-left px-3 py-2">Názov pluginu</th>
+                  <th className="text-left px-3 py-2">Cesta / Súbor</th>
+                  <th className="text-left px-3 py-2">Stav</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plugins.map((pl, i) => (
+                  <tr key={i} className="border-t border-gm-border">
+                    <td className="px-3 py-2 font-medium text-gm-text">{pl.name}</td>
+                    <td className="px-3 py-2 text-gm-text-muted font-mono">{pl.file}</td>
+                    <td className="px-3 py-2 text-emerald-600 font-medium">{pl.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </GlassPanel>

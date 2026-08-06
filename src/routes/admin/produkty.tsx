@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Package } from "lucide-react";
-import { ShopifyDataPage } from "@/components/admin/ShopifyDataPage";
-import { listShopifyProducts, type ShopifyProduct } from "@/lib/shopify.functions";
+import { EcomDataPage } from "@/components/admin/EcomDataPage";
+import { listWooCommerceProducts, type WooCommerceProduct } from "@/lib/woocommerce.functions";
 
 export const Route = createFileRoute("/admin/produkty")({
   component: ProduktyPage,
@@ -25,15 +25,15 @@ function formatPrice(price: string | null, currency: string | null): string {
 }
 
 function ProduktyPage() {
-  const fetchFn = useServerFn(listShopifyProducts);
+  const fetchFn = useServerFn(listWooCommerceProducts);
 
   return (
-    <ShopifyDataPage<ShopifyProduct>
+    <EcomDataPage<WooCommerceProduct>
       title="Produkty"
-      subtitle="Shopify produkty + AI SEO optimalizácia."
+      subtitle="E-shop produkty + AI SEO optimalizácia."
       icon={<Package className="w-5 h-5" />}
       fetchFn={fetchFn}
-      emptyLabel="V Shopify zatiaľ nie sú žiadne produkty."
+      emptyLabel="V obchode zatiaľ nie sú žiadne produkty."
       columns={[
         { key: "title", label: "Názov" },
         { key: "status", label: "Status" },

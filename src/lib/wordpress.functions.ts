@@ -166,3 +166,40 @@ export const listWordPressPosts = createServerFn({ method: "POST" })
       error: null as string | null,
     };
   });
+
+export type WpPlugin = {
+  name: string;
+  file: string;
+  status: string;
+};
+
+export const listWordPressPlugins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ plugins: WpPlugin[]; error: string | null }> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    try {
+      const { getDbPool } = await import("./mysql-client.server");
+      const db = getDbPool();
+      const [rows] = (await db.query(
+        "SELECT option_value FROM pkfegy_options WHERE option_name = 'active_plugins'",
+      )) as unknown as [Array<{ option_value: string }>, unknown];
+      if (!rows.length || !rows[0].option_value) {
+        return { plugins: [], error: null };
+      }
+      const raw = String(rows[0].option_value);
+      const matches = Array.from(raw.matchAll(/"([^"]+\.php)"/g)).map((m) => m[1]);
+      const plugins: WpPlugin[] = matches.map((file) => {
+        const folder = file.split("/")[0] ?? file;
+        const name = folder
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        return { name, file, status: "aktívny" };
+      });
+      return { plugins, error: null };
+    } catch (e) {
+      console.error("[wordpress:plugins]", (e as Error).message);
+      return { plugins: [], error: (e as Error).message };
+    }
+  });

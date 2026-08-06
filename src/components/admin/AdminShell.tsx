@@ -41,7 +41,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             onClick={() => setOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-gm-lg transition-all duration-300 ${
               active
-                ? "bg-[var(--gm-primary)]/10 text-gm-text border border-[var(--gm-primary)]/20 shadow-sm"
+                ? "bg-(--gm-primary)/10 text-gm-text border border-(--gm-primary)/20 shadow-sm"
                 : "text-gm-text-muted hover:bg-gm-bg-soft hover:text-gm-text"
             }`}
           >
@@ -54,7 +54,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex h-screen bg-[#FDFBF7] text-gm-text">
+    <div className="flex h-dvh bg-[#FDFBF7] text-gm-text overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="w-72 hidden md:flex flex-col border-r border-gm-border bg-white/40 backdrop-blur-2xl">
         <div className="p-8">
@@ -97,7 +97,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1 relative group">
-            <div className="absolute inset-0 bg-[var(--gm-primary)]/5 blur-xl group-focus-within:bg-[var(--gm-primary)]/10 transition-all rounded-full pointer-events-none" />
+            <div className="absolute inset-0 bg-(--gm-primary)/5 blur-xl group-focus-within:bg-(--gm-primary)/10 transition-all rounded-full pointer-events-none" />
             <input
               type="text"
               placeholder="Zadajte príkaz pre AI agentov…"

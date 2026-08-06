@@ -3,12 +3,22 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
+export const DEV_USER = {
+  id: "dev-free-entry-user",
+  email: "dev@growmedica.sk",
+  app_metadata: { provider: "dev" },
+  user_metadata: { full_name: "Dev Free Entry User" },
+  aud: "authenticated",
+  created_at: new Date().toISOString(),
+} as unknown as User;
+
 type Provider = "google" | "apple";
 
 type Ctx = {
   user: User | null;
   loading: boolean;
   signInWithProvider: (provider: Provider) => Promise<void>;
+  signInDev: () => void;
   signOut: () => Promise<void>;
 };
 
@@ -19,6 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("gm_dev_auth") === "true") {
+      setUser(DEV_USER);
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
@@ -45,8 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         if (res.error) throw res.error;
       },
+      signInDev: () => {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("gm_dev_auth", "true");
+        }
+        setUser(DEV_USER);
+      },
       signOut: async () => {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("gm_dev_auth");
+        }
         await supabase.auth.signOut();
+        setUser(null);
       },
     }),
     [user, loading],

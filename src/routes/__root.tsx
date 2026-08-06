@@ -83,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Headless commerce command center pre GrowMedica / NOOR. Shopify, Lovable Cloud, AI agenti a webhook hub na jednom mieste.",
+          "Headless commerce command center pre GrowMedica / NOOR. WooCommerce, Lovable Cloud, AI agenti a webhook hub na jednom mieste.",
       },
       { name: "author", content: "GrowMedica" },
       { name: "robots", content: "noindex, nofollow" },
@@ -91,7 +91,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Headless commerce command center pre GrowMedica / NOOR. Shopify, Lovable Cloud, AI agenti a webhook hub na jednom mieste.",
+          "Headless commerce command center pre GrowMedica / NOOR. WooCommerce, Lovable Cloud, AI agenti a webhook hub na jednom mieste.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Headless commerce command center pre GrowMedica / NOOR. Shopify, Lovable Cloud, AI agenti a webhook hub na jednom mieste.",
+          "Headless commerce command center pre GrowMedica / NOOR. WooCommerce, Lovable Cloud, AI agenti a webhook hub na jednom mieste.",
       },
       {
         property: "og:image",

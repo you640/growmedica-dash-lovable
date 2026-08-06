@@ -1,28 +1,55 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type {
-  ShopifyProduct,
-  ShopifyOrder,
-  ShopifyCustomer,
-  ShopifyListResult,
-  ShopifyDashboardSummary,
-} from "./shopify.functions";
+export type WooCommerceProduct = {
+  id: string;
+  title: string;
+  status: string;
+  totalInventory: number;
+  price: string | null;
+  currency: string | null;
+  updatedAt: string;
+};
 
-// WooCommerce backend — sealed alongside Shopify (src/lib/shopify.functions.ts),
-// which is left completely untouched so it can be revived later. These functions
-// re-export the exact Shopify* return types so that swapping listShopifyOrders for
-// listWooCommerceOrders (etc.) in the UI needs no frontend changes.
-//
-// Auth: direct WooCommerce REST API v3 (https://{store}/wp-json/wc/v3/...) via
-// Consumer Key/Secret Basic Auth — NOT the Lovable WordPress connector gateway used
-// by wordpress.functions.ts, which only exposes simplified blog endpoints (posts/
-// pages/media) and cannot be assumed to forward the wc/v3 namespace.
+export type WooCommerceOrder = {
+  id: string;
+  name: string;
+  customer: string | null;
+  total: string | null;
+  currency: string | null;
+  financialStatus: string;
+  fulfillmentStatus: string;
+  createdAt: string;
+};
 
-export type WooCommerceProduct = ShopifyProduct;
-export type WooCommerceOrder = ShopifyOrder;
-export type WooCommerceCustomer = ShopifyCustomer;
-export type WooCommerceListResult<T> = ShopifyListResult<T>;
-export type WooCommerceDashboardSummary = ShopifyDashboardSummary;
+export type WooCommerceCustomer = {
+  id: string;
+  name: string;
+  email: string | null;
+  ordersCount: number;
+  totalSpent: string | null;
+  currency: string | null;
+  createdAt: string;
+};
+
+export type WooCommerceListResult<T> =
+  | { ok: true; items: T[]; error: null }
+  | { ok: false; items: T[]; error: string };
+
+export type WooCommerceDashboardSummary =
+  | {
+      ok: true;
+      productsCount: number | null;
+      ordersTodayCount: number | null;
+      customersCount: number | null;
+      error: null;
+    }
+  | {
+      ok: false;
+      productsCount: null;
+      ordersTodayCount: null;
+      customersCount: null;
+      error: string;
+    };
 
 type WooNonSecretCfg = {
   store_url?: string;
@@ -124,6 +151,52 @@ export const listWooCommerceProducts = createServerFn({ method: "POST" })
     const { assertAdmin } = await import("./admin-guard.server");
     assertAdmin(context.claims);
 
+    if (process.env.WP_DB_HOST) {
+      try {
+        const { getDbPool } = await import("./mysql-client.server");
+        const db = getDbPool();
+        const [currRows] = (await db.query(
+          "SELECT option_value FROM pkfegy_options WHERE option_name = 'woocommerce_currency'",
+        )) as unknown as [Array<{ option_value: string }>, unknown];
+        const currency = currRows[0]?.option_value ?? "EUR";
+
+        const [rows] = (await db.query(`
+          SELECT p.ID as id, p.post_title as title, p.post_status as status, p.post_modified_gmt as updatedAt,
+                 MAX(CASE WHEN pm.meta_key = '_price' THEN pm.meta_value END) as price,
+                 MAX(CASE WHEN pm.meta_key = '_stock' THEN pm.meta_value END) as stock
+          FROM pkfegy_posts p
+          LEFT JOIN pkfegy_postmeta pm ON p.ID = pm.post_id
+          WHERE p.post_type = 'product' AND p.post_status != 'trash'
+          GROUP BY p.ID
+          ORDER BY p.post_modified_gmt DESC
+          LIMIT 50
+        `)) as unknown as [
+          Array<{
+            id: number;
+            title: string;
+            status: string;
+            updatedAt: Date | string;
+            price: string | null;
+            stock: string | null;
+          }>,
+          unknown,
+        ];
+
+        const items: WooCommerceProduct[] = rows.map((p) => ({
+          id: String(p.id),
+          title: p.title || "(Bez názvu)",
+          status: mapWooProductStatus(p.status),
+          totalInventory: Number(p.stock ?? 0),
+          price: p.price || null,
+          currency,
+          updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : p.updatedAt.toISOString(),
+        }));
+        return { ok: true, items, error: null };
+      } catch (e) {
+        console.error("[db:products]", (e as Error).message);
+      }
+    }
+
     const auth = await resolveWooCommerceAuth();
     if (!auth.ok) return { ok: false, items: [], error: auth.error };
 
@@ -170,6 +243,48 @@ export const listWooCommerceOrders = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<WooCommerceListResult<WooCommerceOrder>> => {
     const { assertAdmin } = await import("./admin-guard.server");
     assertAdmin(context.claims);
+
+    if (process.env.WP_DB_HOST) {
+      try {
+        const { getDbPool } = await import("./mysql-client.server");
+        const db = getDbPool();
+        const [rows] = (await db.query(`
+          SELECT id, status, currency, total_amount as total, date_created_gmt as createdAt,
+                 billing_email as email
+          FROM pkfegy_wc_orders
+          ORDER BY date_created_gmt DESC
+          LIMIT 50
+        `)) as unknown as [
+          Array<{
+            id: number;
+            status: string;
+            currency: string;
+            total: string;
+            createdAt: Date | string;
+            email: string | null;
+          }>,
+          unknown,
+        ];
+
+        const items: WooCommerceOrder[] = rows.map((o) => {
+          const rawStatus = (o.status || "").replace(/^wc-/, "");
+          const { financialStatus, fulfillmentStatus } = mapWooOrderStatus(rawStatus);
+          return {
+            id: String(o.id),
+            name: `#${o.id}`,
+            customer: o.email || null,
+            total: o.total || null,
+            currency: o.currency || "EUR",
+            financialStatus,
+            fulfillmentStatus,
+            createdAt: typeof o.createdAt === "string" ? o.createdAt : o.createdAt.toISOString(),
+          };
+        });
+        return { ok: true, items, error: null };
+      } catch (e) {
+        console.error("[db:orders]", (e as Error).message);
+      }
+    }
 
     const auth = await resolveWooCommerceAuth();
     if (!auth.ok) return { ok: false, items: [], error: auth.error };
@@ -221,6 +336,45 @@ export const listWooCommerceCustomers = createServerFn({ method: "POST" })
     const { assertAdmin } = await import("./admin-guard.server");
     assertAdmin(context.claims);
 
+    if (process.env.WP_DB_HOST) {
+      try {
+        const { getDbPool } = await import("./mysql-client.server");
+        const db = getDbPool();
+        const [currRows] = (await db.query(
+          "SELECT option_value FROM pkfegy_options WHERE option_name = 'woocommerce_currency'",
+        )) as unknown as [Array<{ option_value: string }>, unknown];
+        const currency = currRows[0]?.option_value ?? "EUR";
+
+        const [rows] = (await db.query(`
+          SELECT u.ID as id, u.user_email as email, u.display_name as name, u.user_registered as createdAt
+          FROM pkfegy_users u
+          ORDER BY u.user_registered DESC
+          LIMIT 50
+        `)) as unknown as [
+          Array<{
+            id: number;
+            email: string;
+            name: string;
+            createdAt: Date | string;
+          }>,
+          unknown,
+        ];
+
+        const items: WooCommerceCustomer[] = rows.map((c) => ({
+          id: String(c.id),
+          name: c.name || c.email,
+          email: c.email,
+          ordersCount: 0,
+          totalSpent: "0",
+          currency,
+          createdAt: typeof c.createdAt === "string" ? c.createdAt : c.createdAt.toISOString(),
+        }));
+        return { ok: true, items, error: null };
+      } catch (e) {
+        console.error("[db:customers]", (e as Error).message);
+      }
+    }
+
     const auth = await resolveWooCommerceAuth();
     if (!auth.ok) return { ok: false, items: [], error: auth.error };
 
@@ -266,6 +420,32 @@ export const getWooCommerceDashboardSummary = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<WooCommerceDashboardSummary> => {
     const { assertAdmin } = await import("./admin-guard.server");
     assertAdmin(context.claims);
+
+    if (process.env.WP_DB_HOST) {
+      try {
+        const { getDbPool } = await import("./mysql-client.server");
+        const db = getDbPool();
+        const [products] = (await db.query(
+          "SELECT COUNT(*) as cnt FROM pkfegy_posts WHERE post_type = 'product' AND post_status != 'trash'",
+        )) as unknown as [Array<{ cnt: number }>, unknown];
+        const [ordersToday] = (await db.query(
+          "SELECT COUNT(*) as cnt FROM pkfegy_wc_orders WHERE date_created_gmt >= NOW() - INTERVAL 1 DAY",
+        )) as unknown as [Array<{ cnt: number }>, unknown];
+        const [customers] = (await db.query(
+          "SELECT COUNT(*) as cnt FROM pkfegy_users",
+        )) as unknown as [Array<{ cnt: number }>, unknown];
+
+        return {
+          ok: true,
+          productsCount: products[0]?.cnt ?? 0,
+          ordersTodayCount: ordersToday[0]?.cnt ?? 0,
+          customersCount: customers[0]?.cnt ?? 0,
+          error: null,
+        };
+      } catch (e) {
+        console.error("[db:summary]", (e as Error).message);
+      }
+    }
 
     const auth = await resolveWooCommerceAuth();
     if (!auth.ok) {

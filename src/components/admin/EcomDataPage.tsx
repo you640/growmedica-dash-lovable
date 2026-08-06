@@ -3,25 +3,25 @@ import { Link } from "@tanstack/react-router";
 import { Loader2, RefreshCw, ArrowRight, AlertCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { GlassPanel, SectionHeading } from "./AdminShell";
-import type { ShopifyListResult } from "@/lib/shopify.functions";
+import type { WooCommerceListResult } from "@/lib/woocommerce.functions";
 
 type Props<T> = {
   title: string;
   subtitle: string;
   icon: ReactNode;
-  fetchFn: () => Promise<ShopifyListResult<T>>;
+  fetchFn: () => Promise<WooCommerceListResult<T>>;
   columns: { key: string; label: string }[];
   renderRow: (item: T) => ReactNode;
   emptyLabel: string;
 };
 
 const NOT_CONNECTED_ERRORS = [
-  "Chýbajú Shopify credentials",
-  "Neplatný Shopify store domain",
+  "Chýbajú WooCommerce credentials",
+  "Neplatná WooCommerce store URL",
   "musia byť nastavené spolu",
 ];
 
-export function ShopifyDataPage<T>({
+export function EcomDataPage<T>({
   title,
   subtitle,
   icon,
@@ -82,23 +82,23 @@ export function ShopifyDataPage<T>({
         {state === "loading" && (
           <div className="p-10 flex items-center justify-center gap-2 text-sm text-gm-text-muted">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Načítavam z Shopify…
+            Načítavam dáta z obchodu…
           </div>
         )}
 
         {state === "not_connected" && (
           <div className="p-8 flex items-start gap-4">
-            <div className="w-12 h-12 rounded-gm-lg bg-[var(--gm-primary)]/10 text-gm-primary flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-gm-lg bg-(--gm-primary)/10 text-gm-primary flex items-center justify-center shrink-0">
               {icon}
             </div>
             <div>
-              <h2 className="text-lg font-semibold">Shopify ešte nie je pripojené</h2>
+              <h2 className="text-lg font-semibold">E-shop zatiaľ nie je pripojený</h2>
               <p className="text-sm text-gm-text-muted mt-1 max-w-xl">{error}</p>
               <Link
                 to="/admin/nastavenia"
                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-gm-primary text-white px-5 py-2.5 text-sm hover:opacity-90"
               >
-                Pripojiť Shopify v Nastaveniach
+                Pripojiť obchod v Nastaveniach
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

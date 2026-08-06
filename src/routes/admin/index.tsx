@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { GlassPanel, SectionHeading } from "@/components/admin/AdminShell";
-import { getShopifyDashboardSummary } from "@/lib/shopify.functions";
+import { getWooCommerceDashboardSummary } from "@/lib/woocommerce.functions";
 import { Package, ShoppingCart, Sparkles, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
@@ -16,7 +16,7 @@ function StatValue({ value, notConnected }: { value: number | null; notConnected
 }
 
 function AdminHome() {
-  const fetchSummary = useServerFn(getShopifyDashboardSummary);
+  const fetchSummary = useServerFn(getWooCommerceDashboardSummary);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<{
     productsCount: number | null;
@@ -43,16 +43,16 @@ function AdminHome() {
   }, []);
 
   const hint = summary.notConnected
-    ? "Pripojte Shopify v Nastaveniach."
+    ? "Pripojte e-shop v Nastaveniach."
     : loading
       ? "Načítavam…"
-      : "Dáta naživo zo Shopify Admin API.";
+      : "Dáta naživo z Admin API.";
 
   return (
     <div>
       <SectionHeading
         title="Vitajte v GrowMedica Admin"
-        subtitle="Headless command center pre Shopify + Lovable Cloud."
+        subtitle="Headless command center pre e-commerce + Lovable Cloud."
       />
 
       <div className="grid gap-4 md:grid-cols-3">

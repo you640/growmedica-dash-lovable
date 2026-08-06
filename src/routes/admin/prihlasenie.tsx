@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/prihlasenie")({
 });
 
 function LoginPage() {
-  const { user, loading, signInWithProvider } = useAuth();
+  const { user, loading, signInWithProvider, signInDev } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ from: "/admin/prihlasenie" });
   const [err, setErr] = useState<string | null>(null);
@@ -38,8 +38,14 @@ function LoginPage() {
     }
   }
 
+  function handleDevEntry() {
+    signInDev();
+    const next = search.next ? decodeURIComponent(search.next) : "/admin";
+    navigate({ to: next });
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] p-4">
+    <div className="min-h-dvh flex items-center justify-center bg-[#FDFBF7] p-4">
       <div className="w-full max-w-md rounded-gm-lg border border-gm-border bg-white/70 backdrop-blur-md p-8 shadow-sm">
         <div className="text-2xl font-semibold tracking-tight">
           Grow<span className="text-gm-primary">Medica</span>{" "}
@@ -65,6 +71,13 @@ function LoginPage() {
           >
             <Apple className="w-4 h-4" />
             {busy === "apple" ? "Otvára sa Apple…" : "Pokračovať s Apple"}
+          </button>
+          <button
+            disabled={busy !== null}
+            onClick={handleDevEntry}
+            className="w-full inline-flex items-center justify-center gap-3 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-900 px-5 py-3 text-sm font-medium hover:bg-amber-500/20 disabled:opacity-50 transition shadow-sm"
+          >
+            Dev Free Entry (Vývojársky voľný vstup)
           </button>
         </div>
         {err && <div className="mt-4 text-sm text-red-600">{err}</div>}

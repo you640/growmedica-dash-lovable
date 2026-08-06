@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Users } from "lucide-react";
-import { ShopifyDataPage } from "@/components/admin/ShopifyDataPage";
-import { listShopifyCustomers, type ShopifyCustomer } from "@/lib/shopify.functions";
+import { EcomDataPage } from "@/components/admin/EcomDataPage";
+import { listWooCommerceCustomers, type WooCommerceCustomer } from "@/lib/woocommerce.functions";
 
 export const Route = createFileRoute("/admin/zakaznici")({
   component: ZakaznikPage,
@@ -18,15 +18,15 @@ function formatMoney(amount: string | null, currency: string | null): string {
 }
 
 function ZakaznikPage() {
-  const fetchFn = useServerFn(listShopifyCustomers);
+  const fetchFn = useServerFn(listWooCommerceCustomers);
 
   return (
-    <ShopifyDataPage<ShopifyCustomer>
+    <EcomDataPage<WooCommerceCustomer>
       title="Zákazníci"
-      subtitle="CRM pohľad na zákazníkov zo Shopify a marketing platformy."
+      subtitle="CRM pohľad na zákazníkov z e-shopu a marketing platformy."
       icon={<Users className="w-5 h-5" />}
       fetchFn={fetchFn}
-      emptyLabel="V Shopify zatiaľ nie sú žiadni zákazníci."
+      emptyLabel="V obchode zatiaľ nie sú žiadni zákazníci."
       columns={[
         { key: "name", label: "Meno" },
         { key: "email", label: "E-mail" },

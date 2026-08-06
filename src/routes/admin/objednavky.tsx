@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ShoppingCart } from "lucide-react";
-import { ShopifyDataPage } from "@/components/admin/ShopifyDataPage";
-import { listShopifyOrders, type ShopifyOrder } from "@/lib/shopify.functions";
+import { EcomDataPage } from "@/components/admin/EcomDataPage";
+import { listWooCommerceOrders, type WooCommerceOrder } from "@/lib/woocommerce.functions";
 
 export const Route = createFileRoute("/admin/objednavky")({
   component: ObjednavkyPage,
@@ -26,15 +26,15 @@ function statusClass(status: string | null): string {
 }
 
 function ObjednavkyPage() {
-  const fetchFn = useServerFn(listShopifyOrders);
+  const fetchFn = useServerFn(listWooCommerceOrders);
 
   return (
-    <ShopifyDataPage<ShopifyOrder>
+    <EcomDataPage<WooCommerceOrder>
       title="Objednávky"
-      subtitle="Live feed objednávok zo Shopify s fulfilment akciami."
+      subtitle="Live feed objednávok s fulfilment akciami."
       icon={<ShoppingCart className="w-5 h-5" />}
       fetchFn={fetchFn}
-      emptyLabel="V Shopify zatiaľ nie sú žiadne objednávky."
+      emptyLabel="V obchode zatiaľ nie sú žiadne objednávky."
       columns={[
         { key: "name", label: "Objednávka" },
         { key: "customer", label: "Zákazník" },
