@@ -92,6 +92,114 @@ export type Database = {
         }
         Relationships: []
       }
+      wc_customers: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          orders_count: number | null
+          raw: Json
+          total_spent: number | null
+          updated_at: string
+          username: string | null
+          wp_created_at: string | null
+          wp_id: number
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          orders_count?: number | null
+          raw?: Json
+          total_spent?: number | null
+          updated_at?: string
+          username?: string | null
+          wp_created_at?: string | null
+          wp_id: number
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          orders_count?: number | null
+          raw?: Json
+          total_spent?: number | null
+          updated_at?: string
+          username?: string | null
+          wp_created_at?: string | null
+          wp_id?: number
+        }
+        Relationships: []
+      }
+      wc_orders: {
+        Row: {
+          created_at: string
+          currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_wp_id: number | null
+          deleted_at: string | null
+          id: string
+          item_count: number | null
+          number: string | null
+          payment_method: string | null
+          raw: Json
+          status: string | null
+          total: number | null
+          updated_at: string
+          wp_created_at: string | null
+          wp_id: number
+          wp_modified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_wp_id?: number | null
+          deleted_at?: string | null
+          id?: string
+          item_count?: number | null
+          number?: string | null
+          payment_method?: string | null
+          raw?: Json
+          status?: string | null
+          total?: number | null
+          updated_at?: string
+          wp_created_at?: string | null
+          wp_id: number
+          wp_modified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_wp_id?: number | null
+          deleted_at?: string | null
+          id?: string
+          item_count?: number | null
+          number?: string | null
+          payment_method?: string | null
+          raw?: Json
+          status?: string | null
+          total?: number | null
+          updated_at?: string
+          wp_created_at?: string | null
+          wp_id?: number
+          wp_modified_at?: string | null
+        }
+        Relationships: []
+      }
       webhook_endpoints: {
         Row: {
           created_at: string
@@ -155,6 +263,114 @@ export type Database = {
           source?: string
           status?: string
           topic?: string
+        }
+        Relationships: []
+      }
+      wp_content: {
+        Row: {
+          alt_text: string | null
+          author: string | null
+          content_type: string
+          created_at: string
+          deleted_at: string | null
+          excerpt: string | null
+          id: string
+          image_url: string | null
+          link: string | null
+          price: number | null
+          raw: Json
+          slug: string | null
+          status: string | null
+          stock_quantity: number | null
+          stock_status: string | null
+          title: string | null
+          updated_at: string
+          wp_created_at: string | null
+          wp_id: number
+          wp_modified_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          author?: string | null
+          content_type: string
+          created_at?: string
+          deleted_at?: string | null
+          excerpt?: string | null
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          price?: number | null
+          raw?: Json
+          slug?: string | null
+          status?: string | null
+          stock_quantity?: number | null
+          stock_status?: string | null
+          title?: string | null
+          updated_at?: string
+          wp_created_at?: string | null
+          wp_id: number
+          wp_modified_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          author?: string | null
+          content_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          excerpt?: string | null
+          id?: string
+          image_url?: string | null
+          link?: string | null
+          price?: number | null
+          raw?: Json
+          slug?: string | null
+          status?: string | null
+          stock_quantity?: number | null
+          stock_status?: string | null
+          title?: string | null
+          updated_at?: string
+          wp_created_at?: string | null
+          wp_id?: number
+          wp_modified_at?: string | null
+        }
+        Relationships: []
+      }
+      wp_plugins: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_synced_at: string
+          name: string | null
+          plugin_slug: string
+          raw: Json
+          update_available: string | null
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string
+          name?: string | null
+          plugin_slug: string
+          raw?: Json
+          update_available?: string | null
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string
+          name?: string | null
+          plugin_slug?: string
+          raw?: Json
+          update_available?: string | null
+          updated_at?: string
+          version?: string | null
         }
         Relationships: []
       }
