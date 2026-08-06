@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node & Build Outputs
 node_modules
 dist
 dist-ssr
@@ -14,9 +15,18 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
-*.local
 
-# Wrangler / Cloudflare
+# Environment files & Secrets (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+*.local
+*.pem
+*.key
+secrets/
+
+# Cloud platforms & Vercel
+.vercel
 .wrangler/
 .dev.vars
 
