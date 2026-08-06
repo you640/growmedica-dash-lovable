@@ -76,15 +76,15 @@ Aplikácia beží na `http://localhost:3000`.
 
 ## 📋 Dostupné npm príkazy
 
-| Príkaz | Popis |
-| :--- | :--- |
-| `npm run dev` | Spustí lokálny vývojový server Vite |
-| `npm run build` | Vytvorí produkčný build aplikácie |
-| `npm run preview` | Spustí náhľad produkčného buildu |
-| `npm run lint` | Spustí ESLint kontrolu kódového štýlu |
+| Príkaz             | Popis                                   |
+| :----------------- | :-------------------------------------- |
+| `npm run dev`      | Spustí lokálny vývojový server Vite     |
+| `npm run build`    | Vytvorí produkčný build aplikácie       |
+| `npm run preview`  | Spustí náhľad produkčného buildu        |
+| `npm run lint`     | Spustí ESLint kontrolu kódového štýlu   |
 | `npx tsc --noEmit` | Skontroluje TypeScript typovú správnosť |
-| `npm run format` | Formátuje kód pomocou Prettier |
-| `npm run e2e` | Spustí end-to-end testy (Playwright) |
+| `npm run format`   | Formátuje kód pomocou Prettier          |
+| `npm run e2e`      | Spustí end-to-end testy (Playwright)    |
 
 ---
 

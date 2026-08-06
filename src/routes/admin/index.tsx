@@ -52,7 +52,7 @@ function AdminHome() {
     <div>
       <SectionHeading
         title="Vitajte v GrowMedica Admin"
-        subtitle="Headless command center pre e-commerce + Lovable Cloud."
+        subtitle="Headless command center pre e-commerce + Lovable Cloud (Produkcia · Live Status)."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
