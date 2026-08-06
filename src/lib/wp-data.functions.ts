@@ -17,22 +17,43 @@ export const getWpSyncStatus = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { hasWordPressConnection } = await import("./wordpress-client.server");
 
-    const countOf = async (table: "wp_content" | "wc_orders" | "wc_customers" | "wp_plugins", type?: string) => {
-      let q = supabaseAdmin.from(table).select("id", { count: "exact", head: true });
-      if (type) q = q.eq("content_type", type);
-      if (table !== "wp_plugins") q = q.is("deleted_at", null);
-      const { count } = await q;
+    const countContent = async (type: string) => {
+      const { count } = await supabaseAdmin
+        .from("wp_content")
+        .select("id", { count: "exact", head: true })
+        .eq("content_type", type)
+        .is("deleted_at", null);
+      return count ?? 0;
+    };
+    const countOrders = async () => {
+      const { count } = await supabaseAdmin
+        .from("wc_orders")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null);
+      return count ?? 0;
+    };
+    const countCustomers = async () => {
+      const { count } = await supabaseAdmin
+        .from("wc_customers")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null);
+      return count ?? 0;
+    };
+    const countPlugins = async () => {
+      const { count } = await supabaseAdmin
+        .from("wp_plugins")
+        .select("id", { count: "exact", head: true });
       return count ?? 0;
     };
 
     const [post, page, media, product, order, customer, plugin] = await Promise.all([
-      countOf("wp_content", "post"),
-      countOf("wp_content", "page"),
-      countOf("wp_content", "media"),
-      countOf("wp_content", "product"),
-      countOf("wc_orders"),
-      countOf("wc_customers"),
-      countOf("wp_plugins"),
+      countContent("post"),
+      countContent("page"),
+      countContent("media"),
+      countContent("product"),
+      countOrders(),
+      countCustomers(),
+      countPlugins(),
     ]);
 
     const { data: last } = await supabaseAdmin
