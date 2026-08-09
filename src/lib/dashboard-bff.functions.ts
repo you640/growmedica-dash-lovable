@@ -1,0 +1,219 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export type DashboardHealth = {
+  ok: boolean;
+  cms_provider?: string;
+  mistral?: string;
+  catalog?: string;
+  admin?: string;
+  admin_url?: string;
+  write_mode?: string;
+  redis?: boolean;
+  configured?: boolean;
+  error?: string | null;
+};
+
+export type DashboardOverview = {
+  product_count: number;
+  collection_count: number;
+  low_stock_count: number | null;
+  unavailable_count: number;
+  recent_orders: Array<{
+    name: string;
+    total: string;
+    currency: string;
+    financialStatus: string;
+    createdAt: string;
+  }>;
+  recent_audit: unknown[];
+  note?: string;
+  admin?: string;
+};
+
+export type DashboardProductRow = {
+  handle: string;
+  title: string;
+  price: string;
+  currency: string;
+  available: boolean;
+};
+
+export type DashboardInventoryRow = {
+  id: number;
+  handle: string;
+  title: string;
+  quantity: number | null;
+  available: boolean;
+  stock_status: string;
+  sku: string | null;
+};
+
+export const dashboardHealth = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<DashboardHealth> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch, getStorefrontBffConfig } = await import("./storefront-bff.server");
+    const cfg = getStorefrontBffConfig();
+
+    let result: DashboardHealth;
+    if (!cfg.configured) {
+      result = {
+        ok: false,
+        configured: false,
+        error: "STOREFRONT_BFF_BASE_URL alebo DASHBOARD_AGENT_SECRET chýba.",
+      };
+    } else {
+      const r = await bffFetch<DashboardHealth>("/api/dashboard/health");
+      result =
+        !r.ok || !r.data
+          ? { ok: false, configured: true, error: r.error }
+          : { ...r.data, ok: true, configured: true, error: null };
+    }
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("integrations").upsert(
+        {
+          provider: "storefront_bff",
+          name: "default",
+          status: result.ok ? "connected" : "error",
+          last_tested_at: new Date().toISOString(),
+          last_error: result.ok ? null : (result.error ?? "health failed"),
+          config: {
+            catalog: result.catalog ?? null,
+            write_mode: result.write_mode ?? null,
+            mistral: result.mistral ?? null,
+            cms_provider: result.cms_provider ?? null,
+          },
+        },
+        { onConflict: "provider,name" },
+      );
+    } catch (e) {
+      console.error("[storefront-bff:health:status-write]", { message: (e as Error).message });
+    }
+
+    return result;
+  });
+
+export const dashboardOverview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const r = await bffFetch<DashboardOverview>("/api/dashboard/overview");
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Nepodarilo sa načítať overview.");
+    }
+    return r.data;
+  });
+
+export const dashboardProducts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        search: z.string().trim().max(120).optional(),
+        limit: z.number().int().min(1).max(50).default(20),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const r = await bffFetch<{
+      products: DashboardProductRow[];
+      count: number;
+      admin?: string;
+    }>("/api/dashboard/products", {
+      query: { search: data.search, limit: data.limit },
+    });
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Nepodarilo sa načítať produkty.");
+    }
+    return r.data;
+  });
+
+export const dashboardProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({ handle: z.string().trim().min(1).max(200) }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const handle = encodeURIComponent(data.handle);
+    const r = await bffFetch<{ product: Record<string, unknown> }>(
+      `/api/dashboard/products/${handle}`,
+    );
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Produkt nenájdený.");
+    }
+    return r.data;
+  });
+
+export const dashboardInventory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        limit: z.number().int().min(1).max(100).default(50),
+        threshold: z.number().int().min(0).max(100000).default(100),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const r = await bffFetch<{
+      items: DashboardInventoryRow[];
+      count: number;
+      note?: string;
+      admin?: string;
+    }>("/api/dashboard/inventory", {
+      query: { limit: data.limit, threshold: data.threshold },
+    });
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Nepodarilo sa načítať inventár.");
+    }
+    return r.data;
+  });
+
+export const dashboardInventoryUpdate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        handle: z.string().trim().min(1).max(200),
+        quantity: z.number().int().min(0).max(1_000_000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const health = await bffFetch<{ write_mode?: string }>("/api/dashboard/health");
+    if (health.data?.write_mode !== "live_writes_allowed") {
+      throw new Error(
+        "Live zápisy sú vypnuté (BFF write_mode ≠ live_writes_allowed). Nastav DASHBOARD_ALLOW_LIVE_WRITES=1 na storefronte.",
+      );
+    }
+    const r = await bffFetch<{
+      ok: boolean;
+      handle: string;
+      quantity: number | null;
+      available: boolean;
+    }>("/api/dashboard/inventory", {
+      method: "PUT",
+      body: { handle: data.handle, quantity: data.quantity },
+    });
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Aktualizácia inventára zlyhala.");
+    }
+    return r.data;
+  });

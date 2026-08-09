@@ -9,7 +9,7 @@ import {
   listRecentWebhookEvents,
 } from "@/lib/admin.functions";
 import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
-import { WpRelayCard } from "@/components/admin/WpRelayCard";
+import { dashboardHealth } from "@/lib/dashboard-bff.functions";
 import {
   CheckCircle2,
   XCircle,
@@ -21,6 +21,7 @@ import {
   Server,
   Globe,
   Webhook,
+  Link2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/nastavenia")({
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/admin/nastavenia")({
 
 const PROVIDERS = [
   { id: "wordpress", label: "WordPress", icon: Globe },
+  { id: "storefront_bff", label: "Storefront BFF", icon: Link2 },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
   { id: "firebase", label: "Firebase", icon: Flame },
@@ -124,13 +126,9 @@ function SettingsPage() {
 
         <div>
           {tab === "lovable_cloud" && <LovableCloudCard />}
-          {tab === "wordpress" && (
-            <div className="space-y-6">
-              <WordPressCard onSaved={refresh} />
-              <WpRelayCard />
-            </div>
-          )}
-          {tab !== "lovable_cloud" && tab !== "wordpress" && (
+          {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
+          {tab === "storefront_bff" && <StorefrontBffCard onSaved={refresh} />}
+          {tab !== "lovable_cloud" && tab !== "wordpress" && tab !== "storefront_bff" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}
         </div>
@@ -222,6 +220,84 @@ function LovableCloudCard() {
           </div>
         )}
       </div>
+    </GlassPanel>
+  );
+}
+
+function StorefrontBffCard({ onSaved }: { onSaved: () => void }) {
+  const healthFn = useServerFn(dashboardHealth);
+  type Health = Awaited<ReturnType<typeof healthFn>>;
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<Health | null>(null);
+
+  async function runTest() {
+    setTesting(true);
+    try {
+      const r = await healthFn();
+      setResult(r);
+      if (r.ok)
+        toast.success(`BFF OK · katalog ${r.catalog ?? "?"} · writes ${r.write_mode ?? "?"}`);
+      else toast.error(r.error ?? "BFF health zlyhal.");
+      onSaved();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <GlassPanel className="p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Storefront BFF</h2>
+        <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">
+          Proxy na Next storefront <span className="font-mono">/api/dashboard/*</span> cez server
+          header <span className="font-mono">x-dashboard-agent-secret</span>. Env:{" "}
+          <span className="font-mono">STOREFRONT_BFF_BASE_URL</span>,{" "}
+          <span className="font-mono">DASHBOARD_AGENT_SECRET</span> (server-only, nie{" "}
+          <span className="font-mono">VITE_*</span>).
+        </p>
+      </div>
+
+      <button
+        onClick={runTest}
+        disabled={testing}
+        className="rounded-full bg-gm-primary text-white px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
+      >
+        {testing && <Loader2 className="w-4 h-4 animate-spin" />}
+        Test GET /api/dashboard/health
+      </button>
+
+      {result && (
+        <div className="grid gap-3 md:grid-cols-2 text-sm">
+          <ResultRow
+            label="Konfigurácia"
+            ok={result.configured !== false && !result.error?.includes("chýba")}
+            detail={
+              result.configured === false
+                ? (result.error ?? "Env chýba")
+                : "STOREFRONT_BFF_BASE_URL + secret OK"
+            }
+          />
+          <ResultRow
+            label="Auth health"
+            ok={!!result.ok && !result.error}
+            detail={
+              result.error ?? `catalog=${result.catalog ?? "—"} · mistral=${result.mistral ?? "—"}`
+            }
+          />
+          <ResultRow
+            label="Write mode"
+            ok={!!result.write_mode}
+            detail={result.write_mode ?? "—"}
+          />
+          <ResultRow
+            label="CMS / Redis"
+            ok={!!result.cms_provider}
+            detail={`cms=${result.cms_provider ?? "—"} · redis=${result.redis ? "yes" : "no"}`}
+          />
+        </div>
+      )}
     </GlassPanel>
   );
 }
