@@ -217,3 +217,118 @@ export const dashboardInventoryUpdate = createServerFn({ method: "POST" })
     }
     return r.data;
   });
+
+export type DashboardOrderRow = {
+  id: string;
+  name: string;
+  createdAt: string;
+  financialStatus: string;
+  fulfillmentStatus: string;
+  total: string;
+  currency: string;
+  customerName: string;
+  customerEmail: string;
+  paymentMethod: string;
+};
+
+type AgentAction = {
+  tool: string;
+  status: string;
+  result?: Record<string, unknown>;
+};
+
+async function runAgentTool(
+  command: string,
+  tool: string,
+): Promise<{ action: AgentAction; note?: string }> {
+  const { bffFetch } = await import("./storefront-bff.server");
+  const r = await bffFetch<{
+    actions?: AgentAction[];
+    reply?: string;
+    error?: string;
+  }>("/api/dashboard/agent", {
+    method: "POST",
+    body: { command, mode: "monitor" },
+  });
+  if (!r.ok || !r.data) {
+    throw new Error(r.error ?? "Agent BFF zlyhal.");
+  }
+  const action = (r.data.actions ?? []).find((a) => a.tool === tool);
+  if (!action || action.status !== "ok") {
+    throw new Error(
+      `Tool ${tool} nedostupné${r.data.reply ? `: ${r.data.reply.slice(0, 160)}` : "."}`,
+    );
+  }
+  return { action };
+}
+
+export const dashboardOrders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        limit: z.number().int().min(1).max(50).default(30),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const r = await bffFetch<{
+      orders: DashboardOrderRow[];
+      count: number;
+      note?: string;
+      admin?: string;
+    }>("/api/dashboard/orders", {
+      query: { limit: data.limit },
+    });
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Nepodarilo sa načítať objednávky.");
+    }
+    return r.data;
+  });
+
+export const dashboardOrderAnomalies = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { action } = await runAgentTool(
+      "Ukáž zaseknuté a anomálne objednávky so zlyhanými platbami",
+      "order_anomalies",
+    );
+    const result = action.result ?? {};
+    return {
+      stale_orders: (result.stale_orders as unknown[]) ?? [],
+      failed_count: Number(result.failed_count ?? 0),
+      checked: Number(result.checked ?? 0),
+      stale_threshold_hours: Number(result.stale_threshold_hours ?? 48),
+      note: typeof result.note === "string" ? result.note : null,
+    };
+  });
+
+export const dashboardInventoryAlerts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        threshold: z.number().int().min(0).max(1000).default(5),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { action } = await runAgentTool(
+      `Skladové alerty a nízke zásoby (threshold ${data.threshold})`,
+      "inventory_alerts",
+    );
+    const result = action.result ?? {};
+    return {
+      alerts: (result.alerts as unknown[]) ?? [],
+      checked: Number(result.checked ?? 0),
+      threshold: Number(result.threshold ?? data.threshold),
+      note: typeof result.note === "string" ? result.note : null,
+    };
+  });
