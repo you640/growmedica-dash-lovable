@@ -24,9 +24,8 @@ export const Route = createFileRoute("/api/public/webhooks/wordpress")({
         const raw = await request.text();
         if (raw.length > MAX_BODY) return new Response("Payload too large", { status: 413 });
 
-        const { verifyWpSignature, applyWordPressEvent, relayToEndpoints } = await import(
-          "@/lib/wp-sync.server"
-        );
+        const { verifyWpSignature, applyWordPressEvent, relayToEndpoints } =
+          await import("@/lib/wp-sync.server");
 
         const signature =
           request.headers.get("x-gm-signature") ?? request.headers.get("x-wp-signature");
@@ -65,7 +64,10 @@ export const Route = createFileRoute("/api/public/webhooks/wordpress")({
         }
 
         try {
-          relayed = await relayToEndpoints(parsed.topic, { topic: parsed.topic, data: parsed.data });
+          relayed = await relayToEndpoints(parsed.topic, {
+            topic: parsed.topic,
+            data: parsed.data,
+          });
           if (status === "processed" && relayed.length > 0) status = "relayed";
         } catch (e) {
           console.error("[wp-webhook] relay failed", { message: (e as Error).message });
@@ -94,7 +96,12 @@ export const Route = createFileRoute("/api/public/webhooks/wordpress")({
           console.error("[wp-webhook] log write failed", { message: (e as Error).message });
         }
 
-        return Response.json({ ok: status !== "failed", topic: parsed.topic, status, relayed: relayed.length });
+        return Response.json({
+          ok: status !== "failed",
+          topic: parsed.topic,
+          status,
+          relayed: relayed.length,
+        });
       },
     },
   },

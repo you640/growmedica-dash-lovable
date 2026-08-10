@@ -197,8 +197,8 @@ export function WpRelayCard() {
         <h3 className="text-base font-semibold">Webhook relay → databáza</h3>
         <p className="text-sm text-gm-text-muted mt-1 max-w-2xl">
           Publikačné udalosti z WordPressu a WooCommerce (príspevky, stránky, médiá, produkty,
-          objednávky, zákazníci, pluginy) sa podpísané pošlú na tento endpoint a okamžite aktualizujú
-          záznamy v databáze.
+          objednávky, zákazníci, pluginy) sa podpísané pošlú na tento endpoint a okamžite
+          aktualizujú záznamy v databáze.
         </p>
       </div>
 
@@ -218,7 +218,11 @@ export function WpRelayCard() {
         <div className="flex flex-wrap gap-2 pt-1">
           <Chip
             ok={!!status?.secretConfigured}
-            label={status?.secretConfigured ? "WORDPRESS_WEBHOOK_SECRET nastavený" : "Chýba WORDPRESS_WEBHOOK_SECRET"}
+            label={
+              status?.secretConfigured
+                ? "WORDPRESS_WEBHOOK_SECRET nastavený"
+                : "Chýba WORDPRESS_WEBHOOK_SECRET"
+            }
           />
           <Chip
             ok={!!status?.connectorConnected}
@@ -244,7 +248,11 @@ export function WpRelayCard() {
           disabled={importing}
           className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
         >
-          {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {importing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
           Načítať existujúci obsah
         </button>
         <button
@@ -252,7 +260,11 @@ export function WpRelayCard() {
           disabled={loading}
           className="rounded-full border border-gm-border bg-white px-5 py-2 text-sm hover:bg-gm-bg-soft disabled:opacity-50 inline-flex items-center gap-2"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
           Obnoviť
         </button>
       </div>
@@ -293,7 +305,9 @@ export function WpRelayCard() {
                       {new Date(e.created_at).toLocaleString("sk-SK")}
                     </td>
                     <td className="px-3 py-2 font-mono">{e.topic}</td>
-                    <td className={`px-3 py-2 ${e.status === "failed" ? "text-red-600" : "text-green-600"}`}>
+                    <td
+                      className={`px-3 py-2 ${e.status === "failed" ? "text-red-600" : "text-green-600"}`}
+                    >
                       {e.status}
                     </td>
                     <td className="px-3 py-2 text-gm-text-muted">{e.error ?? "—"}</td>

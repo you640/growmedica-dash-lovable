@@ -49,7 +49,11 @@ function iso(v: unknown): string | null {
 
 type Payload = Record<string, unknown>;
 
-export type SyncOutcome = { table: string; action: "upsert" | "delete" | "skip"; wpId: number | null };
+export type SyncOutcome = {
+  table: string;
+  action: "upsert" | "delete" | "skip";
+  wpId: number | null;
+};
 
 const CONTENT_TYPE_BY_PREFIX: Record<string, string> = {
   post: "post",
@@ -62,10 +66,7 @@ const CONTENT_TYPE_BY_PREFIX: Record<string, string> = {
  * Applies one webhook event to the mirror tables.
  * `topic` looks like "post.published", "order.status_changed", "plugin.activated".
  */
-export async function applyWordPressEvent(
-  topic: string,
-  payload: Payload,
-): Promise<SyncOutcome> {
+export async function applyWordPressEvent(topic: string, payload: Payload): Promise<SyncOutcome> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [entity, action = ""] = topic.split(".");
   const deleted = /deleted|trashed|removed/.test(action);
@@ -126,7 +127,9 @@ export async function applyWordPressEvent(
       return { table: "wc_orders", action: "delete", wpId };
     }
     const billing = (payload.billing ?? {}) as Record<string, unknown>;
-    const items = Array.isArray(payload.line_items) ? payload.line_items.length : num(payload.item_count);
+    const items = Array.isArray(payload.line_items)
+      ? payload.line_items.length
+      : num(payload.item_count);
     const row = {
       wp_id: wpId,
       number: typeof payload.number === "string" ? payload.number : String(wpId),
@@ -201,7 +204,12 @@ export async function applyWordPressEvent(
       plugin_slug: slug,
       name: typeof payload.name === "string" ? payload.name : slug,
       version: typeof payload.version === "string" ? payload.version : null,
-      is_active: action === "activated" ? true : action === "deactivated" ? false : payload.is_active === true,
+      is_active:
+        action === "activated"
+          ? true
+          : action === "deactivated"
+            ? false
+            : payload.is_active === true,
       update_available:
         typeof payload.update_available === "string" ? payload.update_available : null,
       last_synced_at: new Date().toISOString(),
@@ -242,7 +250,10 @@ export async function relayToEndpoints(topic: string, body: unknown): Promise<st
         if (res.ok) delivered.push(e.id);
         else console.error(`[wp-relay] endpoint ${e.id} responded ${res.status}`);
       } catch (err) {
-        console.error("[wp-relay] endpoint delivery failed", { id: e.id, message: (err as Error).message });
+        console.error("[wp-relay] endpoint delivery failed", {
+          id: e.id,
+          message: (err as Error).message,
+        });
       }
     }),
   );
