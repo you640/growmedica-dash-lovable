@@ -19,6 +19,7 @@ import { Route as AdminObjednavkyRouteImport } from './routes/admin/objednavky'
 import { Route as AdminPrihlasenieRouteImport } from './routes/admin/prihlasenie'
 import { Route as AdminProduktyRouteImport } from './routes/admin/produkty'
 import { Route as AdminZakazniciRouteImport } from './routes/admin/zakaznici'
+import { Route as ApiPublicWebhooksWordpressRouteImport } from './routes/api/public/webhooks/wordpress'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,12 @@ const AdminZakazniciRoute = AdminZakazniciRouteImport.update({
   path: '/zakaznici',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const ApiPublicWebhooksWordpressRoute =
+  ApiPublicWebhooksWordpressRouteImport.update({
+    id: '/api/public/webhooks/wordpress',
+    path: '/api/public/webhooks/wordpress',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/admin/produkty': typeof AdminProduktyRoute
   '/admin/zakaznici': typeof AdminZakazniciRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/webhooks/wordpress': typeof ApiPublicWebhooksWordpressRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,6 +101,7 @@ export interface FileRoutesByTo {
   '/admin/produkty': typeof AdminProduktyRoute
   '/admin/zakaznici': typeof AdminZakazniciRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/webhooks/wordpress': typeof ApiPublicWebhooksWordpressRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,6 +115,7 @@ export interface FileRoutesById {
   '/admin/produkty': typeof AdminProduktyRoute
   '/admin/zakaznici': typeof AdminZakazniciRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/webhooks/wordpress': typeof ApiPublicWebhooksWordpressRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/admin/produkty'
     | '/admin/zakaznici'
     | '/admin/'
+    | '/api/public/webhooks/wordpress'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/admin/produkty'
     | '/admin/zakaznici'
     | '/admin'
+    | '/api/public/webhooks/wordpress'
   id:
     | '__root__'
     | '/'
@@ -143,11 +155,13 @@ export interface FileRouteTypes {
     | '/admin/produkty'
     | '/admin/zakaznici'
     | '/admin/'
+    | '/api/public/webhooks/wordpress'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  ApiPublicWebhooksWordpressRoute: typeof ApiPublicWebhooksWordpressRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -222,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminZakazniciRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/api/public/webhooks/wordpress': {
+      id: '/api/public/webhooks/wordpress'
+      path: '/api/public/webhooks/wordpress'
+      fullPath: '/api/public/webhooks/wordpress'
+      preLoaderRoute: typeof ApiPublicWebhooksWordpressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -254,6 +275,7 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  ApiPublicWebhooksWordpressRoute: ApiPublicWebhooksWordpressRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
