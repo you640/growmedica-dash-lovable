@@ -50,8 +50,7 @@ export function AdminAuthGate({ children }: { children: ReactNode }) {
     );
   }
   if (state.kind === "anonymous") {
-    const next = encodeURIComponent(pathname);
-    return <Navigate to="/admin/prihlasenie" search={{ next }} />;
+    return <Navigate to="/admin/prihlasenie" search={{ next: pathname }} />;
   }
   if (state.kind === "forbidden") {
     return (
