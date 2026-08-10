@@ -122,6 +122,31 @@ function AdminHome() {
               value={health?.redis ? "yes" : "no"}
               ok={!!health?.redis}
             />
+            <StatusPill
+              label="SF"
+              value={health?.merchants?.superfaktura ? "on" : "off"}
+              ok={health?.merchants?.superfaktura === true}
+            />
+            <StatusPill
+              label="Stripe"
+              value={health?.merchants?.stripe ? "on" : "off"}
+              ok={health?.merchants?.stripe === true}
+            />
+            <StatusPill
+              label="Packeta"
+              value={health?.merchants?.packeta ? "on" : "off"}
+              ok={health?.merchants?.packeta === true}
+            />
+            <StatusPill
+              label="DPD"
+              value={health?.merchants?.dpd ? "on" : "off"}
+              ok={health?.merchants?.dpd === true}
+            />
+            <StatusPill
+              label="GoPay"
+              value={health?.merchants?.gopay ? "on" : "off"}
+              ok={health?.merchants?.gopay === true}
+            />
           </div>
         )}
       </GlassPanel>

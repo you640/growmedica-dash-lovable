@@ -22,7 +22,12 @@ import {
   Globe,
   Webhook,
   Link2,
+  FileText,
+  CreditCard,
+  Truck,
+  Package,
 } from "lucide-react";
+import type { MerchantFlags } from "@/lib/dashboard-bff.functions";
 
 export const Route = createFileRoute("/admin/nastavenia")({
   head: () => ({
@@ -46,6 +51,11 @@ export const Route = createFileRoute("/admin/nastavenia")({
 const PROVIDERS = [
   { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "storefront_bff", label: "Storefront BFF", icon: Link2 },
+  { id: "superfaktura", label: "SuperFaktúra", icon: FileText },
+  { id: "stripe", label: "Stripe", icon: CreditCard },
+  { id: "packeta", label: "Packeta", icon: Package },
+  { id: "dpd", label: "DPD", icon: Truck },
+  { id: "gopay", label: "GoPay", icon: CreditCard },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
   { id: "firebase", label: "Firebase", icon: Flame },
@@ -53,6 +63,14 @@ const PROVIDERS = [
   { id: "gcp", label: "Google Cloud", icon: Server },
   { id: "custom", label: "Custom Webhook", icon: Webhook },
 ] as const;
+
+const MERCHANT_TABS = new Set([
+  "superfaktura",
+  "stripe",
+  "packeta",
+  "dpd",
+  "gopay",
+]);
 
 type Tab = (typeof PROVIDERS)[number]["id"];
 
@@ -138,6 +156,25 @@ function SettingsPage() {
             <span>
               redis: <strong>{liveHealth.redis ? "yes" : "no"}</strong>
             </span>
+            {liveHealth.merchants && (
+              <>
+                <span>
+                  SF: <strong>{liveHealth.merchants.superfaktura ? "on" : "off"}</strong>
+                </span>
+                <span>
+                  Stripe: <strong>{liveHealth.merchants.stripe ? "on" : "off"}</strong>
+                </span>
+                <span>
+                  Packeta: <strong>{liveHealth.merchants.packeta ? "on" : "off"}</strong>
+                </span>
+                <span>
+                  DPD: <strong>{liveHealth.merchants.dpd ? "on" : "off"}</strong>
+                </span>
+                <span>
+                  GoPay: <strong>{liveHealth.merchants.gopay ? "on" : "off"}</strong>
+                </span>
+              </>
+            )}
             {!liveHealth.ok && (
               <span className="text-red-700">{liveHealth.error ?? "BFF error"}</span>
             )}
@@ -180,12 +217,96 @@ function SettingsPage() {
               }}
             />
           )}
-          {tab !== "lovable_cloud" && tab !== "wordpress" && tab !== "storefront_bff" && (
-            <GenericConfigCard providerId={tab} onSaved={refresh} />
+          {MERCHANT_TABS.has(tab) && (
+            <MerchantOpsCard
+              providerId={tab}
+              merchants={liveHealth?.merchants}
+              status={statusFor(tab)}
+              onRefresh={syncLiveBff}
+            />
           )}
+          {tab !== "lovable_cloud" &&
+            tab !== "wordpress" &&
+            tab !== "storefront_bff" &&
+            !MERCHANT_TABS.has(tab) && (
+              <GenericConfigCard providerId={tab} onSaved={refresh} />
+            )}
         </div>
       </div>
     </div>
+  );
+}
+
+function MerchantOpsCard({
+  providerId,
+  merchants,
+  status,
+  onRefresh,
+}: {
+  providerId: string;
+  merchants?: MerchantFlags | null;
+  status: string;
+  onRefresh: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const labels: Record<string, string> = {
+    superfaktura: "SuperFaktúra",
+    stripe: "Stripe",
+    packeta: "Packeta",
+    dpd: "DPD",
+    gopay: "GoPay",
+  };
+  const key = providerId as keyof MerchantFlags;
+  const flag =
+    merchants && typeof merchants[key] === "boolean" ? (merchants[key] as boolean) : null;
+
+  return (
+    <GlassPanel className="p-6 space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold">{labels[providerId] ?? providerId}</h2>
+        <p className="text-sm text-gm-text-muted mt-1">
+          Stav z storefront BFF <code className="text-xs">merchants</code> (žiadne secrets v UI).
+          Kľúče nastavuje majiteľ v CMS / Vercel — pozri docs/MERCHANT_KEYS.md.
+        </p>
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <StatusDot status={status} />
+        <span>
+          Hub: <strong>{status}</strong>
+          {flag != null && (
+            <>
+              {" "}
+              · BFF flag: <strong>{flag ? "configured" : "not configured"}</strong>
+            </>
+          )}
+          {merchants?.source && (
+            <>
+              {" "}
+              · source: <strong>{merchants.source}</strong>
+            </>
+          )}
+        </span>
+      </div>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await onRefresh();
+            toast.success("Merchant stav obnovený z BFF");
+          } catch (e) {
+            toast.error((e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[var(--gm-primary)] text-white text-sm disabled:opacity-60"
+      >
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+        Obnoviť z BFF health
+      </button>
+    </GlassPanel>
   );
 }
 

@@ -2,6 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export type MerchantFlags = {
+  superfaktura?: boolean;
+  stripe?: boolean;
+  packeta?: boolean;
+  dpd?: boolean;
+  gopay?: boolean;
+  source?: string;
+};
+
 export type DashboardHealth = {
   ok: boolean;
   cms_provider?: string;
@@ -11,6 +20,7 @@ export type DashboardHealth = {
   admin_url?: string;
   write_mode?: string;
   redis?: boolean;
+  merchants?: MerchantFlags;
   configured?: boolean;
   error?: string | null;
 };
@@ -107,6 +117,39 @@ export const dashboardHealth = createServerFn({ method: "POST" })
         },
         { onConflict: "provider,name" },
       );
+
+      const m = result.merchants;
+      const merchantProviders: Array<{
+        provider: string;
+        ok: boolean;
+      }> = [
+        { provider: "superfaktura", ok: m?.superfaktura === true },
+        { provider: "stripe", ok: m?.stripe === true },
+        { provider: "packeta", ok: m?.packeta === true },
+        { provider: "dpd", ok: m?.dpd === true },
+        { provider: "gopay", ok: m?.gopay === true },
+      ];
+      for (const row of merchantProviders) {
+        await supabaseAdmin.from("integrations").upsert(
+          {
+            provider: row.provider,
+            name: "default",
+            status: result.ok && row.ok ? "connected" : result.ok ? "disconnected" : "error",
+            last_tested_at: now,
+            last_error:
+              result.ok && row.ok
+                ? null
+                : result.ok
+                  ? "not configured (BFF merchants)"
+                  : (result.error ?? "BFF health failed"),
+            config: {
+              source: m?.source ?? "storefront_bff_health",
+              merchants: m ?? null,
+            },
+          },
+          { onConflict: "provider,name" },
+        );
+      }
     } catch (e) {
       console.error("[storefront-bff:health:status-write]", { message: (e as Error).message });
     }
