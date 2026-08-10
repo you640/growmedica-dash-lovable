@@ -9,6 +9,23 @@ export const Route = createFileRoute("/admin/prihlasenie")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     next: typeof s.next === "string" ? s.next : undefined,
   }),
+  head: () => ({
+    meta: [
+      { title: "Prihlásenie — GrowMedica Admin" },
+      {
+        name: "description",
+        content:
+          "Prihlásenie do GrowMedica Admin cez Google alebo Apple. Prístup len pre e-maily z whitelistu.",
+      },
+      { property: "og:title", content: "Prihlásenie — GrowMedica Admin" },
+      {
+        property: "og:description",
+        content: "Zabezpečený vstup do GrowMedica Integration Command Center.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: LoginPage,
 });
 
@@ -21,7 +38,9 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      const next = search.next ? decodeURIComponent(search.next) : "/admin";
+      const raw = search.next ?? "/admin";
+      // only allow same-origin absolute paths
+      const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
       navigate({ to: next });
     }
   }, [user, loading, search.next, navigate]);
