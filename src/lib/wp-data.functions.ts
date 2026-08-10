@@ -5,7 +5,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export type SyncStatus = {
   secretConfigured: boolean;
   connectorConnected: boolean;
-  counts: { post: number; page: number; media: number; product: number; order: number; customer: number; plugin: number };
+  counts: {
+    post: number;
+    page: number;
+    media: number;
+    product: number;
+    order: number;
+    customer: number;
+    plugin: number;
+  };
   lastEventAt: string | null;
 };
 
@@ -88,7 +96,9 @@ export const listSyncedContent = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("wp_content")
-      .select("id, wp_id, title, slug, status, link, image_url, price, stock_status, stock_quantity, wp_modified_at")
+      .select(
+        "id, wp_id, title, slug, status, link, image_url, price, stock_status, stock_quantity, wp_modified_at",
+      )
       .eq("content_type", data.contentType)
       .is("deleted_at", null)
       .order("wp_modified_at", { ascending: false })
@@ -118,7 +128,9 @@ export const listSyncedOrders = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("wc_orders")
-      .select("id, wp_id, number, status, currency, total, customer_email, customer_name, item_count, wp_created_at")
+      .select(
+        "id, wp_id, number, status, currency, total, customer_email, customer_name, item_count, wp_created_at",
+      )
       .is("deleted_at", null)
       .order("wp_created_at", { ascending: false })
       .limit(data.limit);
@@ -196,7 +208,9 @@ export const backfillWordPressContent = createServerFn({ method: "POST" })
     }
 
     try {
-      const r = await wpFetch<Array<Record<string, unknown>>>("/plugins", { query: { per_page: 100 } });
+      const r = await wpFetch<Array<Record<string, unknown>>>("/plugins", {
+        query: { per_page: 100 },
+      });
       if (r.ok && Array.isArray(r.json)) {
         for (const p of r.json) {
           await applyWordPressEvent("plugin.updated", {
