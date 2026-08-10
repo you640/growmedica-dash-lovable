@@ -134,3 +134,64 @@ export async function bffFetch<T = unknown>(
     };
   }
 }
+
+/** Fetch raw text/CSV from BFF (e.g. export download). */
+export async function bffFetchText(
+  path: string,
+): Promise<BffResult<string> & { filename: string | null }> {
+  const { baseUrl, secret, configured } = getStorefrontBffConfig();
+  if (!configured || !baseUrl || !secret) {
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      error: "Storefront BFF nie je nakonfigurovaný.",
+      filename: null,
+    };
+  }
+  if (!path.startsWith("/api/dashboard")) {
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      error: "Neplatná BFF cesta.",
+      filename: null,
+    };
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: "GET",
+      headers: {
+        Accept: "text/csv, application/json, */*",
+        [SECRET_HEADER]: secret,
+      },
+    });
+    const text = await res.text();
+    const disp = res.headers.get("content-disposition") ?? "";
+    const match = /filename="([^"]+)"/i.exec(disp);
+    const filename = match?.[1] ?? null;
+
+    if (!res.ok) {
+      let err = `Storefront BFF HTTP ${res.status}`;
+      try {
+        const j = JSON.parse(text) as { error?: string };
+        if (j.error) err = j.error;
+      } catch {
+        /* keep status message */
+      }
+      return { ok: false, status: res.status, data: null, error: err, filename };
+    }
+
+    return { ok: true, status: res.status, data: text, error: null, filename };
+  } catch (e) {
+    console.error("[storefront-bff:text]", { path, message: (e as Error).message });
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      error: "Storefront BFF nedostupný (sieťová chyba).",
+      filename: null,
+    };
+  }
+}

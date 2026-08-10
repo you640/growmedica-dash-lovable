@@ -78,14 +78,32 @@ function StatusDot({ status }: { status?: string | null }) {
 function SettingsPage() {
   const [tab, setTab] = useState<Tab>("wordpress");
   const listFn = useServerFn(listIntegrations);
+  const healthFn = useServerFn(dashboardHealth);
   const [integrations, setIntegrations] = useState<IntegrationRow[]>([]);
+  const [liveHealth, setLiveHealth] = useState<Awaited<ReturnType<typeof healthFn>> | null>(
+    null,
+  );
 
   async function refresh() {
     const r = await listFn();
     setIntegrations(r.integrations as IntegrationRow[]);
   }
+
+  async function syncLiveBff() {
+    try {
+      const h = await healthFn();
+      setLiveHealth(h);
+      await refresh();
+    } catch {
+      /* Hub still usable without BFF */
+    }
+  }
+
   useEffect(() => {
-    refresh().catch(() => undefined);
+    void (async () => {
+      await refresh().catch(() => undefined);
+      await syncLiveBff();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -96,8 +114,36 @@ function SettingsPage() {
     <div>
       <SectionHeading
         title="Integration Hub"
-        subtitle="Pripojte WordPress, Lovable Cloud, Vercel, Firebase, Mistral, GCP a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
+        subtitle="Pripojte WordPress, Lovable Cloud, Vercel, Firebase, Mistral, GCP a vlastné webhooky. Storefront BFF syncne živý stav (catalog/mistral/writes)."
       />
+
+      {liveHealth && (
+        <GlassPanel className="p-4 mb-4 text-sm">
+          <div className="text-xs uppercase tracking-wider text-gm-text-muted mb-2">
+            Živý stav (BFF health)
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <span>
+              catalog: <strong>{liveHealth.catalog ?? "—"}</strong>
+            </span>
+            <span>
+              mistral: <strong>{liveHealth.mistral ?? "—"}</strong>
+            </span>
+            <span>
+              write_mode: <strong>{liveHealth.write_mode ?? "—"}</strong>
+            </span>
+            <span>
+              cms: <strong>{liveHealth.cms_provider ?? "—"}</strong>
+            </span>
+            <span>
+              redis: <strong>{liveHealth.redis ? "yes" : "no"}</strong>
+            </span>
+            {!liveHealth.ok && (
+              <span className="text-red-700">{liveHealth.error ?? "BFF error"}</span>
+            )}
+          </div>
+        </GlassPanel>
+      )}
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
         <GlassPanel className="p-2 h-fit">
@@ -127,7 +173,13 @@ function SettingsPage() {
         <div>
           {tab === "lovable_cloud" && <LovableCloudCard />}
           {tab === "wordpress" && <WordPressCard onSaved={refresh} />}
-          {tab === "storefront_bff" && <StorefrontBffCard onSaved={refresh} />}
+          {tab === "storefront_bff" && (
+            <StorefrontBffCard
+              onSaved={async () => {
+                await syncLiveBff();
+              }}
+            />
+          )}
           {tab !== "lovable_cloud" && tab !== "wordpress" && tab !== "storefront_bff" && (
             <GenericConfigCard providerId={tab} onSaved={refresh} />
           )}

@@ -75,12 +75,13 @@ export const dashboardHealth = createServerFn({ method: "POST" })
 
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const now = new Date().toISOString();
       await supabaseAdmin.from("integrations").upsert(
         {
           provider: "storefront_bff",
           name: "default",
           status: result.ok ? "connected" : "error",
-          last_tested_at: new Date().toISOString(),
+          last_tested_at: now,
           last_error: result.ok ? null : (result.error ?? "health failed"),
           config: {
             catalog: result.catalog ?? null,
@@ -88,6 +89,21 @@ export const dashboardHealth = createServerFn({ method: "POST" })
             mistral: result.mistral ?? null,
             cms_provider: result.cms_provider ?? null,
           },
+        },
+        { onConflict: "provider,name" },
+      );
+      const mistralOk = result.mistral === "configured" || result.mistral === "mock";
+      await supabaseAdmin.from("integrations").upsert(
+        {
+          provider: "mistral_ai",
+          name: "default",
+          status: result.ok && mistralOk ? "connected" : result.ok ? "error" : "disconnected",
+          last_tested_at: now,
+          last_error:
+            result.ok && mistralOk
+              ? null
+              : `mistral=${result.mistral ?? "missing"} (via storefront BFF health)`,
+          config: { mistral: result.mistral ?? null, source: "storefront_bff_health" },
         },
         { onConflict: "provider,name" },
       );
@@ -231,7 +247,7 @@ export type DashboardOrderRow = {
   paymentMethod: string;
 };
 
-type AgentAction = {
+export type AgentAction = {
   tool: string;
   status: string;
   result?: Record<string, unknown>;
@@ -330,5 +346,104 @@ export const dashboardInventoryAlerts = createServerFn({ method: "POST" })
       checked: Number(result.checked ?? 0),
       threshold: Number(result.threshold ?? data.threshold),
       note: typeof result.note === "string" ? result.note : null,
+    };
+  });
+
+export type AgentMode = "assist" | "plan" | "monitor";
+
+export type DashboardAgentResult = {
+  conversation_id: string;
+  reply: string;
+  mode: AgentMode;
+  actions: AgentAction[];
+};
+
+export type DashboardAuditEntry = {
+  id: string;
+  timestamp: string;
+  tool: string;
+  status: string;
+  summary?: string;
+  conversation_id?: string;
+};
+
+export const dashboardAgent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        command: z.string().trim().min(1).max(4000),
+        conversation_id: z.string().max(128).optional(),
+        mode: z.enum(["assist", "plan", "monitor"]).default("assist"),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }): Promise<DashboardAgentResult> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const r = await bffFetch<DashboardAgentResult>("/api/dashboard/agent", {
+      method: "POST",
+      body: {
+        command: data.command,
+        conversation_id: data.conversation_id,
+        mode: data.mode,
+      },
+    });
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Agent request zlyhal.");
+    }
+    return {
+      conversation_id: r.data.conversation_id,
+      reply: r.data.reply,
+      mode: r.data.mode ?? data.mode,
+      actions: r.data.actions ?? [],
+    };
+  });
+
+export const dashboardAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z
+      .object({
+        limit: z.number().int().min(1).max(100).default(20),
+        offset: z.number().int().min(0).default(0),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetch } = await import("./storefront-bff.server");
+    const r = await bffFetch<{
+      entries: DashboardAuditEntry[];
+      limit: number;
+      offset: number;
+    }>("/api/dashboard/audit", {
+      query: { limit: data.limit, offset: data.offset },
+    });
+    if (!r.ok || !r.data) {
+      throw new Error(r.error ?? "Audit BFF zlyhal.");
+    }
+    return r.data;
+  });
+
+export const dashboardExportDownload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) =>
+    z.object({ exportId: z.string().trim().min(1).max(200) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { bffFetchText } = await import("./storefront-bff.server");
+    const id = encodeURIComponent(data.exportId);
+    const r = await bffFetchText(`/api/dashboard/export/${id}`);
+    if (!r.ok || r.data == null) {
+      throw new Error(r.error ?? "Export nedostupný alebo expirovaný.");
+    }
+    return {
+      content: r.data,
+      filename: r.filename ?? `export-${data.exportId}.csv`,
     };
   });
