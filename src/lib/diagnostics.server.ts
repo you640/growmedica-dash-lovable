@@ -34,7 +34,11 @@ const ENV_HINTS: Record<string, string> = {
     "Chýba servisný kľúč backendu. Skontroluj, či je Lovable Cloud zapnutý; kľúč sa dopĺňa automaticky.",
 };
 
-function hintForCheck(name: string, status: number | undefined, detail?: string): string | undefined {
+function hintForCheck(
+  name: string,
+  status: number | undefined,
+  detail?: string,
+): string | undefined {
   if (name.startsWith("unauth")) {
     return "Endpoint bez kľúča nesmie vrátiť 2xx. Na storefronte doplň kontrolu hlavičky x-agent-secret a vracaj 401 pri chýbajúcom/nesprávnom kľúči.";
   }
@@ -134,7 +138,9 @@ export async function runSmokeTest() {
     const base = trimBase(baseRaw);
     checks.push(await timed("health", () => callBff(base, "/api/agent/health", secret)));
     checks.push(await timed("overview", () => callBff(base, "/api/agent/overview", secret)));
-    checks.push(await timed("products", () => callBff(base, "/api/agent/products?limit=1", secret)));
+    checks.push(
+      await timed("products", () => callBff(base, "/api/agent/products?limit=1", secret)),
+    );
     checks.push(await timed("orders", () => callBff(base, "/api/agent/orders?limit=1", secret)));
     checks.push(
       await timed("unauth (must be 401/403)", async () => {
