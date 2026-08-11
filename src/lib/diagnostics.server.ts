@@ -34,20 +34,23 @@ const ENV_HINTS: Record<string, string> = {
     "Chýba servisný kľúč backendu. Skontroluj, či je Lovable Cloud zapnutý; kľúč sa dopĺňa automaticky.",
 };
 
+/** Canonical storefront BFF auth header (parity with storefront/src/lib/dashboard-agent/auth.ts). */
+const SECRET_HEADER = "x-dashboard-agent-secret";
+
 function hintForCheck(
   name: string,
   status: number | undefined,
   detail?: string,
 ): string | undefined {
   if (name.startsWith("unauth")) {
-    return "Endpoint bez kľúča nesmie vrátiť 2xx. Na storefronte doplň kontrolu hlavičky x-agent-secret a vracaj 401 pri chýbajúcom/nesprávnom kľúči.";
+    return "Endpoint bez kľúča nesmie vrátiť 2xx. Na storefronte doplň kontrolu hlavičky x-dashboard-agent-secret a vracaj 401 pri chýbajúcom/nesprávnom kľúči.";
   }
   switch (status) {
     case 401:
     case 403:
       return "Kľúč nesedí. DASHBOARD_AGENT_SECRET tu a na storefronte (Vercel → Environment Variables) musí byť znak po znaku rovnaký — pozor na medzery a nový riadok pri kopírovaní. Po zmene sprav redeploy storefrontu.";
     case 404:
-      return "Endpoint neexistuje na tejto doméne. Skontroluj STOREFRONT_BFF_BASE_URL (bez /api a bez lomky na konci) a či je route /api/agent/* nasadená.";
+      return "Endpoint neexistuje na tejto doméne. Skontroluj STOREFRONT_BFF_BASE_URL (bez /api a bez lomky na konci) a či je route /api/dashboard/* nasadená.";
     case 405:
       return "Metóda nie je povolená — endpoint musí podporovať GET.";
     case 429:
@@ -94,17 +97,17 @@ async function callBff(
   const res = await fetch(`${base}${path}`, {
     method: "GET",
     headers: {
-      accept: "application/json",
-      ...(secret ? { "x-agent-secret": secret, authorization: `Bearer ${secret}` } : {}),
+      Accept: "application/json",
+      ...(secret ? { [SECRET_HEADER]: secret } : {}),
     },
   });
   const text = await res.text();
-  let detail = text.slice(0, 200);
+  let detail = `${path} · ${text.slice(0, 200)}`;
   try {
     const json = JSON.parse(text) as Record<string, unknown>;
-    detail = JSON.stringify(json).slice(0, 200);
+    detail = `${path} · ${JSON.stringify(json).slice(0, 200)}`;
   } catch {
-    /* keep raw snippet */
+    /* keep raw snippet with path */
   }
   return { ok: res.ok, status: res.status, detail };
 }
@@ -136,15 +139,30 @@ export async function runSmokeTest() {
     });
   } else {
     const base = trimBase(baseRaw);
-    checks.push(await timed("health", () => callBff(base, "/api/agent/health", secret)));
-    checks.push(await timed("overview", () => callBff(base, "/api/agent/overview", secret)));
+
+    // health: soft-public without secret returns {ok:true}; auth success needs cms_provider
     checks.push(
-      await timed("products", () => callBff(base, "/api/agent/products?limit=1", secret)),
+      await timed("health", async () => {
+        const r = await callBff(base, "/api/dashboard/health", secret);
+        const hasCms = Boolean(r.detail && r.detail.includes("cms_provider"));
+        return {
+          ok: r.status === 200 && hasCms,
+          status: r.status,
+          detail: r.detail,
+        };
+      }),
     );
-    checks.push(await timed("orders", () => callBff(base, "/api/agent/orders?limit=1", secret)));
+
+    checks.push(await timed("overview", () => callBff(base, "/api/dashboard/overview", secret)));
+    checks.push(
+      await timed("products", () => callBff(base, "/api/dashboard/products?limit=3", secret)),
+    );
+    checks.push(
+      await timed("orders", () => callBff(base, "/api/dashboard/orders?limit=3", secret)),
+    );
     checks.push(
       await timed("unauth (must be 401/403)", async () => {
-        const r = await callBff(base, "/api/agent/overview", undefined);
+        const r = await callBff(base, "/api/dashboard/products?limit=1", undefined);
         return { ok: r.status === 401 || r.status === 403, status: r.status, detail: r.detail };
       }),
     );
