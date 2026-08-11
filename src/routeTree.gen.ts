@@ -14,6 +14,7 @@ import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAiRouteImport } from './routes/admin/ai'
 import { Route as AdminAnalytikaRouteImport } from './routes/admin/analytika'
+import { Route as AdminDiagnostikaRouteImport } from './routes/admin/diagnostika'
 import { Route as AdminNastaveniaRouteImport } from './routes/admin/nastavenia'
 import { Route as AdminObjednavkyRouteImport } from './routes/admin/objednavky'
 import { Route as AdminPrihlasenieRouteImport } from './routes/admin/prihlasenie'
@@ -44,6 +45,11 @@ const AdminAiRoute = AdminAiRouteImport.update({
 const AdminAnalytikaRoute = AdminAnalytikaRouteImport.update({
   id: '/analytika',
   path: '/analytika',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDiagnostikaRoute = AdminDiagnostikaRouteImport.update({
+  id: '/diagnostika',
+  path: '/diagnostika',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminNastaveniaRoute = AdminNastaveniaRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteRouteWithChildren
   '/admin/ai': typeof AdminAiRoute
   '/admin/analytika': typeof AdminAnalytikaRoute
+  '/admin/diagnostika': typeof AdminDiagnostikaRoute
   '/admin/nastavenia': typeof AdminNastaveniaRoute
   '/admin/objednavky': typeof AdminObjednavkyRoute
   '/admin/prihlasenie': typeof AdminPrihlasenieRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/ai': typeof AdminAiRoute
   '/admin/analytika': typeof AdminAnalytikaRoute
+  '/admin/diagnostika': typeof AdminDiagnostikaRoute
   '/admin/nastavenia': typeof AdminNastaveniaRoute
   '/admin/objednavky': typeof AdminObjednavkyRoute
   '/admin/prihlasenie': typeof AdminPrihlasenieRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteRouteWithChildren
   '/admin/ai': typeof AdminAiRoute
   '/admin/analytika': typeof AdminAnalytikaRoute
+  '/admin/diagnostika': typeof AdminDiagnostikaRoute
   '/admin/nastavenia': typeof AdminNastaveniaRoute
   '/admin/objednavky': typeof AdminObjednavkyRoute
   '/admin/prihlasenie': typeof AdminPrihlasenieRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/ai'
     | '/admin/analytika'
+    | '/admin/diagnostika'
     | '/admin/nastavenia'
     | '/admin/objednavky'
     | '/admin/prihlasenie'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/ai'
     | '/admin/analytika'
+    | '/admin/diagnostika'
     | '/admin/nastavenia'
     | '/admin/objednavky'
     | '/admin/prihlasenie'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/ai'
     | '/admin/analytika'
+    | '/admin/diagnostika'
     | '/admin/nastavenia'
     | '/admin/objednavky'
     | '/admin/prihlasenie'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalytikaRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/diagnostika': {
+      id: '/admin/diagnostika'
+      path: '/diagnostika'
+      fullPath: '/admin/diagnostika'
+      preLoaderRoute: typeof AdminDiagnostikaRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/nastavenia': {
       id: '/admin/nastavenia'
       path: '/nastavenia'
@@ -249,6 +268,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteRouteChildren {
   AdminAiRoute: typeof AdminAiRoute
   AdminAnalytikaRoute: typeof AdminAnalytikaRoute
+  AdminDiagnostikaRoute: typeof AdminDiagnostikaRoute
   AdminNastaveniaRoute: typeof AdminNastaveniaRoute
   AdminObjednavkyRoute: typeof AdminObjednavkyRoute
   AdminPrihlasenieRoute: typeof AdminPrihlasenieRoute
@@ -260,6 +280,7 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAiRoute: AdminAiRoute,
   AdminAnalytikaRoute: AdminAnalytikaRoute,
+  AdminDiagnostikaRoute: AdminDiagnostikaRoute,
   AdminNastaveniaRoute: AdminNastaveniaRoute,
   AdminObjednavkyRoute: AdminObjednavkyRoute,
   AdminPrihlasenieRoute: AdminPrihlasenieRoute,
@@ -280,13 +301,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
