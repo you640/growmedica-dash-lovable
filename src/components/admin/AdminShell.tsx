@@ -7,6 +7,7 @@ import {
   BarChart3,
   Sparkles,
   Settings,
+  Stethoscope,
   LogOut,
   Menu,
   X,
@@ -21,6 +22,7 @@ const NAV = [
   { icon: Users, label: "Zákazníci", href: "/admin/zakaznici" },
   { icon: BarChart3, label: "Analytika", href: "/admin/analytika" },
   { icon: Sparkles, label: "Agentic AI", href: "/admin/ai" },
+  { icon: Stethoscope, label: "Diagnostika", href: "/admin/diagnostika" },
 ] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
