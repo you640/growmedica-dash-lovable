@@ -433,18 +433,6 @@ function WooBtn({
   );
 }
 
-function ChipUnused({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs ${
-        ok ? "bg-green-500/10 text-green-700" : "bg-red-500/10 text-red-700"
-      }`}
-    >
-      {label}
-    </span>
-  );
-}
-
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border border-gm-border px-3 py-2">
