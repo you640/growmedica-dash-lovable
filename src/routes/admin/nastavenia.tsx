@@ -475,7 +475,7 @@ function GenericConfigCard({ providerId, onSaved }: { providerId: string; onSave
           {saving ? "Ukladám…" : "Uložiť konfiguráciu"}
         </button>
         <span className="text-xs text-gm-text-muted self-center">
-          Live API volania pre tento provider sa aktivujú vo Fáze 2 / 3.
+          Konfigurácia sa uloží do databázy; API kľúče patria do Cloud secretov.
         </span>
       </div>
     </GlassPanel>
