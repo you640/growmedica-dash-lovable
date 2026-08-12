@@ -248,6 +248,14 @@ export function WpRelayCard() {
             ok={!!status?.connectorConnected}
             label={status?.connectorConnected ? "Konektor pripojený" : "Konektor nepripojený"}
           />
+          <Chip
+            ok={!!status?.bffConfigured}
+            label={
+              status?.bffConfigured
+                ? "Storefront API nastavené"
+                : "Chýba STOREFRONT_BFF_BASE_URL / DASHBOARD_AGENT_SECRET"
+            }
+          />
           {status?.lastEventAt && (
             <span className="rounded-full bg-gm-bg-soft px-3 py-1 text-xs text-gm-text-muted">
               Posledná udalosť: {new Date(status.lastEventAt).toLocaleString("sk-SK")}
@@ -287,6 +295,48 @@ export function WpRelayCard() {
           )}
           Obnoviť
         </button>
+      </div>
+
+      <div className="space-y-2">
+        <div className="text-xs uppercase tracking-wider text-gm-text-muted">
+          WooCommerce backfill
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <WooBtn
+            busy={wooBusy === "products"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["products"], "products")}
+          >
+            Načítať produkty
+          </WooBtn>
+          <WooBtn
+            busy={wooBusy === "orders"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["orders"], "orders")}
+          >
+            Načítať objednávky
+          </WooBtn>
+          <WooBtn
+            busy={wooBusy === "customers"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["customers"], "customers")}
+          >
+            Načítať zákazníkov
+          </WooBtn>
+          <WooBtn
+            busy={wooBusy === "all"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["products", "orders", "customers"], "all")}
+            primary
+          >
+            Načítať všetko
+          </WooBtn>
+        </div>
+        <p className="text-xs text-gm-text-muted max-w-2xl">
+          Produkty sa načítajú z WordPress REST API cez konektor a doplnia sa o živé ceny a sklad zo
+          storefront API. Objednávky a zákazníci prichádzajú zo storefront API (zákazníci sa odvodia
+          z e-mailov v objednávkach).
+        </p>
       </div>
 
       {c && (
