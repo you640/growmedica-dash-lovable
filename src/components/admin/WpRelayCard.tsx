@@ -404,6 +404,47 @@ function Chip({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+function WooBtn({
+  children,
+  onClick,
+  busy,
+  disabled,
+  primary,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  busy: boolean;
+  disabled?: boolean;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-full px-4 py-2 text-xs inline-flex items-center gap-2 disabled:opacity-50 ${
+        primary
+          ? "bg-gm-primary text-white hover:opacity-90"
+          : "border border-gm-border bg-white hover:bg-gm-bg-soft"
+      }`}
+    >
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+      {children}
+    </button>
+  );
+}
+
+function ChipUnused({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span
+      className={`rounded-full px-3 py-1 text-xs ${
+        ok ? "bg-green-500/10 text-green-700" : "bg-red-500/10 text-red-700"
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border border-gm-border px-3 py-2">
