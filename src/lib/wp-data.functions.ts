@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export type SyncStatus = {
   secretConfigured: boolean;
   connectorConnected: boolean;
+  bffConfigured: boolean;
   counts: {
     post: number;
     page: number;
@@ -24,6 +25,7 @@ export const getWpSyncStatus = createServerFn({ method: "POST" })
     assertAdmin(context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { hasWordPressConnection } = await import("./wordpress-client.server");
+    const { getBffConfig } = await import("./bff.server");
 
     const countContent = async (type: string) => {
       const { count } = await supabaseAdmin
@@ -75,6 +77,7 @@ export const getWpSyncStatus = createServerFn({ method: "POST" })
     return {
       secretConfigured: !!process.env["WORDPRESS_WEBHOOK_SECRET"]?.trim(),
       connectorConnected: hasWordPressConnection(),
+      bffConfigured: getBffConfig().configured,
       counts: { post, page, media, product, order, customer, plugin },
       lastEventAt: last?.created_at ?? null,
     };
