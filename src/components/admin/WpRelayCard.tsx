@@ -192,6 +192,32 @@ export function WpRelayCard() {
     }
   }
 
+  async function runWoo(kinds: Array<"products" | "orders" | "customers">, label: string) {
+    setWooBusy(label);
+    try {
+      const r = await wooFn({ data: { kinds } });
+      for (const p of r.parts) {
+        if (p.error) toast.error(`${p.kind}: ${p.error}`);
+        else if (p.note) toast.info(`${p.kind}: ${p.note}`);
+        else toast.success(`${p.kind}: ${p.imported} záznamov`);
+      }
+      await refresh();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setWooBusy(null);
+    }
+  }
+
+  async function copyUnused(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} skopírované.`);
+    } catch {
+      toast.error("Kopírovanie zlyhalo.");
+    }
+  }
+
   const c = status?.counts;
 
   return (
