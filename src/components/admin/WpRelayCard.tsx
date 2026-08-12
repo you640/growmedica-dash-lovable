@@ -140,12 +140,14 @@ type EventRow = {
 export function WpRelayCard() {
   const statusFn = useServerFn(getWpSyncStatus);
   const backfillFn = useServerFn(backfillWordPressContent);
+  const wooFn = useServerFn(backfillWooCommerce);
   const eventsFn = useServerFn(listRecentWebhookEvents);
 
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [wooBusy, setWooBusy] = useState<string | null>(null);
   const [endpoint, setEndpoint] = useState("");
 
   useEffect(() => {
