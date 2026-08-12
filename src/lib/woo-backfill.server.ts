@@ -22,17 +22,12 @@ function stableId(input: string): number {
 }
 
 async function loadBffPriceMap(): Promise<Map<string, BffProduct>> {
+  // The dashboard API ignores `offset` and caps the page size, so one call is enough.
   const map = new Map<string, BffProduct>();
   const { configured } = getBffConfig();
   if (!configured) return map;
-  for (let offset = 0; offset < 1000; offset += 100) {
-    const r = await bffGet<{ products?: BffProduct[] }>(
-      `/api/dashboard/products?limit=100&offset=${offset}`,
-    );
-    const items = r.json?.products ?? [];
-    for (const p of items) if (p.handle) map.set(p.handle, p);
-    if (items.length < 100) break;
-  }
+  const r = await bffGet<{ products?: BffProduct[] }>("/api/dashboard/products?limit=500");
+  for (const p of r.json?.products ?? []) if (p.handle) map.set(p.handle, p);
   return map;
 }
 
@@ -87,19 +82,9 @@ async function fetchOrders(): Promise<{ orders: BffOrder[]; error?: string }> {
       error: "Chýba STOREFRONT_BFF_BASE_URL alebo DASHBOARD_AGENT_SECRET.",
     };
   }
-  const all: BffOrder[] = [];
-  for (let offset = 0; offset < 1000; offset += 100) {
-    const r = await bffGet<{ orders?: BffOrder[] }>(
-      `/api/dashboard/orders?limit=100&offset=${offset}`,
-    );
-    if (!r.ok) {
-      return { orders: all, error: `Storefront API vrátilo ${r.status}.` };
-    }
-    const items = r.json?.orders ?? [];
-    all.push(...items);
-    if (items.length < 100) break;
-  }
-  return { orders: all };
+  const r = await bffGet<{ orders?: BffOrder[] }>("/api/dashboard/orders?limit=500");
+  if (!r.ok) return { orders: [], error: `Storefront API vrátilo ${r.status}.` };
+  return { orders: r.json?.orders ?? [] };
 }
 
 export async function backfillOrders(): Promise<BackfillPart> {
