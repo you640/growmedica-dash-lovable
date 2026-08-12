@@ -6,6 +6,7 @@ import { GlassPanel } from "./AdminShell";
 import {
   getWpSyncStatus,
   backfillWordPressContent,
+  backfillWooCommerce,
   type SyncStatus,
 } from "@/lib/wp-data.functions";
 import { listRecentWebhookEvents } from "@/lib/admin.functions";
