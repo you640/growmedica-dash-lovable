@@ -209,15 +209,6 @@ export function WpRelayCard() {
     }
   }
 
-  async function copyUnused(text: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(`${label} skopírované.`);
-    } catch {
-      toast.error("Kopírovanie zlyhalo.");
-    }
-  }
-
   const c = status?.counts;
 
   return (
