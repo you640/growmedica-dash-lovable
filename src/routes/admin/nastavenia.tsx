@@ -379,19 +379,6 @@ const PROVIDER_SCHEMAS: Record<
       { key: "deploy_hook_url", label: "Deploy hook URL", secret: true },
     ],
   },
-  firebase: {
-    label: "Firebase",
-    description:
-      "Firebase config je v Lovable Cloud secretoch (FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_APP_ID, ADMIN_EMAILS). Tu nastavte voliteľný override.",
-    fields: [
-      { key: "auth_domain_override", label: "Auth domain override" },
-      {
-        key: "admin_emails_extra",
-        label: "Ďalšie admin e-maily (čiarkou oddelené)",
-        placeholder: "user@example.com, second@example.com",
-      },
-    ],
-  },
   mistral_ai: {
     label: "Mistral AI",
     description:
@@ -409,45 +396,6 @@ const PROVIDER_SCHEMAS: Record<
       },
       { key: "max_tokens", label: "Max tokens", placeholder: "2048" },
       { key: "temperature", label: "Temperature", placeholder: "0.3" },
-    ],
-  },
-  gcp: {
-    label: "Google Cloud",
-    description:
-      "Service account pre Google Cloud Storage / Vertex AI. Vložte celý service account JSON — uloží sa zašifrovane.",
-    fields: [
-      { key: "project_id", label: "GCP Project ID" },
-      { key: "bucket", label: "Default bucket" },
-      {
-        key: "service_account_json",
-        label: "Service account JSON",
-        secret: true,
-        textarea: true,
-      },
-    ],
-  },
-  wordpress: {
-    label: "WordPress",
-    description:
-      "Spojenie s WordPress REST API (napr. blog GrowMedica). Pre auth použite Application Password.",
-    fields: [
-      { key: "base_url", label: "Base URL", placeholder: "https://blog.example.com" },
-      { key: "username", label: "WP používateľ" },
-      { key: "app_password", label: "Application password", secret: true },
-    ],
-  },
-  custom: {
-    label: "Custom Webhook",
-    description:
-      "Vlastný relay endpoint, ktorému budeme posielať preposlané WordPress eventy (fan-out engine).",
-    fields: [
-      { key: "target_url", label: "Target URL", placeholder: "https://hooks.example.com/in" },
-      { key: "secret", label: "Shared secret (HMAC)", secret: true },
-      {
-        key: "events",
-        label: "Eventy (čiarkou oddelené)",
-        placeholder: "products/create,orders/create",
-      },
     ],
   },
 };
