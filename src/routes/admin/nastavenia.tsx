@@ -10,18 +10,7 @@ import {
 } from "@/lib/admin.functions";
 import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
 import { WpRelayCard } from "@/components/admin/WpRelayCard";
-import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Database,
-  Cloud,
-  Flame,
-  Sparkles,
-  Server,
-  Globe,
-  Webhook,
-} from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Database, Cloud, Sparkles, Globe } from "lucide-react";
 
 export const Route = createFileRoute("/admin/nastavenia")({
   head: () => ({
@@ -46,10 +35,7 @@ const PROVIDERS = [
   { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
-  { id: "firebase", label: "Firebase", icon: Flame },
   { id: "mistral_ai", label: "Mistral AI", icon: Sparkles },
-  { id: "gcp", label: "Google Cloud", icon: Server },
-  { id: "custom", label: "Custom Webhook", icon: Webhook },
 ] as const;
 
 type Tab = (typeof PROVIDERS)[number]["id"];
@@ -94,7 +80,7 @@ function SettingsPage() {
     <div>
       <SectionHeading
         title="Integration Hub"
-        subtitle="Pripojte WordPress, Lovable Cloud, Vercel, Firebase, Mistral, GCP a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
+        subtitle="Aktívny stack GrowMedica: WordPress + WooCommerce, Lovable Cloud, Vercel a Mistral AI. Secrets sú uložené v Cloude a nikdy neopúšťajú server."
       />
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
