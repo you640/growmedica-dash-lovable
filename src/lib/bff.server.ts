@@ -9,7 +9,9 @@ export function getBffConfig() {
   return { base, secret, configured: Boolean(base && secret) };
 }
 
-export async function bffGet<T>(path: string): Promise<{ ok: boolean; status: number; json: T | null }> {
+export async function bffGet<T>(
+  path: string,
+): Promise<{ ok: boolean; status: number; json: T | null }> {
   const { base, secret, configured } = getBffConfig();
   if (!configured) return { ok: false, status: 0, json: null };
   const res = await fetch(`${base}${path}`, {

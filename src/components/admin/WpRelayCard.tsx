@@ -427,7 +427,11 @@ function WooBtn({
           : "border border-gm-border bg-white hover:bg-gm-bg-soft"
       }`}
     >
-      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+      {busy ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Download className="w-3.5 h-3.5" />
+      )}
       {children}
     </button>
   );

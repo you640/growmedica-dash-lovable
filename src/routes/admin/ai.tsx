@@ -40,7 +40,9 @@ function AiPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <GlassPanel className="p-6">
           <div className="text-xs uppercase tracking-wider text-gm-text-muted">Mistral stav</div>
-          <div className={`text-2xl font-semibold mt-2 ${ready ? "text-green-700" : "text-gm-text"}`}>
+          <div
+            className={`text-2xl font-semibold mt-2 ${ready ? "text-green-700" : "text-gm-text"}`}
+          >
             {mistral ?? "—"}
           </div>
         </GlassPanel>

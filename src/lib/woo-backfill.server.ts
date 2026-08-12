@@ -46,7 +46,9 @@ export async function backfillProducts(): Promise<BackfillPart> {
       for (const item of r.json) {
         const slug = typeof item.slug === "string" ? item.slug : "";
         const live = prices.get(slug);
-        const embedded = item._embedded as { "wp:featuredmedia"?: Array<{ source_url?: string }> } | undefined;
+        const embedded = item._embedded as
+          | { "wp:featuredmedia"?: Array<{ source_url?: string }> }
+          | undefined;
         const image = embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null;
         const classList = Array.isArray(item.class_list) ? (item.class_list as string[]) : [];
         const stockStatus = classList.includes("outofstock")
