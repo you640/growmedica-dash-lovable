@@ -40,12 +40,14 @@ export async function backfillProducts(): Promise<BackfillPart> {
   try {
     for (let page = 1; page <= 10; page++) {
       const r = await wpFetch<Array<Record<string, unknown>>>("/product", {
-        query: { per_page: 100, page, status: "any" },
+        query: { per_page: 100, page, status: "any", _embed: "wp:featuredmedia" },
       });
       if (!r.ok || !Array.isArray(r.json) || r.json.length === 0) break;
       for (const item of r.json) {
         const slug = typeof item.slug === "string" ? item.slug : "";
         const live = prices.get(slug);
+        const embedded = item._embedded as { "wp:featuredmedia"?: Array<{ source_url?: string }> } | undefined;
+        const image = embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null;
         const classList = Array.isArray(item.class_list) ? (item.class_list as string[]) : [];
         const stockStatus = classList.includes("outofstock")
           ? "outofstock"
@@ -60,6 +62,7 @@ export async function backfillProducts(): Promise<BackfillPart> {
                   : null;
         await applyWordPressEvent("product.updated", {
           ...item,
+          image_url: image,
           price: live?.price ?? null,
           stock_status: stockStatus,
         });
