@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export type SyncStatus = {
   secretConfigured: boolean;
   connectorConnected: boolean;
+  bffConfigured: boolean;
   counts: {
     post: number;
     page: number;
@@ -24,6 +25,7 @@ export const getWpSyncStatus = createServerFn({ method: "POST" })
     assertAdmin(context.claims);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { hasWordPressConnection } = await import("./wordpress-client.server");
+    const { getBffConfig } = await import("./bff.server");
 
     const countContent = async (type: string) => {
       const { count } = await supabaseAdmin
@@ -75,6 +77,7 @@ export const getWpSyncStatus = createServerFn({ method: "POST" })
     return {
       secretConfigured: !!process.env["WORDPRESS_WEBHOOK_SECRET"]?.trim(),
       connectorConnected: hasWordPressConnection(),
+      bffConfigured: getBffConfig().configured,
       counts: { post, page, media, product, order, customer, plugin },
       lastEventAt: last?.created_at ?? null,
     };
@@ -227,4 +230,143 @@ export const backfillWordPressContent = createServerFn({ method: "POST" })
     }
 
     return { ok: error === null, imported, error };
+  });
+
+const WooBackfillInput = z.object({
+  kinds: z.array(z.enum(["products", "orders", "customers"])).min(1),
+});
+
+/** Pull WooCommerce products / orders / customers into the mirror tables. */
+export const backfillWooCommerce = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => WooBackfillInput.parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { runWooBackfill } = await import("./woo-backfill.server");
+    const parts = await runWooBackfill(data.kinds);
+    return {
+      ok: parts.every((p) => !p.error),
+      parts,
+      imported: parts.reduce((s, p) => s + p.imported, 0),
+    };
+  });
+
+export type StoreOverview = {
+  bffConfigured: boolean;
+  health: { cmsProvider: string | null; catalog: string | null; mistral: string | null } | null;
+  store: {
+    productCount: number | null;
+    lowStock: number | null;
+    unavailable: number | null;
+  } | null;
+  mirror: {
+    orders: number;
+    revenue: number;
+    currency: string;
+    customers: number;
+    products: number;
+    byStatus: Array<{ status: string; count: number }>;
+    recent: Array<{
+      id: string;
+      number: string | null;
+      total: number | null;
+      currency: string | null;
+      status: string | null;
+      customer_name: string | null;
+      wp_created_at: string | null;
+    }>;
+  };
+  error: string | null;
+};
+
+/** KPI feed for the analytics page: live store health + aggregates from synced orders. */
+export const getStoreOverview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<StoreOverview> => {
+    const { assertAdmin } = await import("./admin-guard.server");
+    assertAdmin(context.claims);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { bffGet, getBffConfig } = await import("./bff.server");
+    type Health = { cms_provider?: string; catalog?: string; mistral?: string };
+    type Overview = {
+      product_count?: number | null;
+      low_stock_count?: number | null;
+      unavailable_count?: number | null;
+    };
+
+    const configured = getBffConfig().configured;
+    let health: StoreOverview["health"] = null;
+    let store: StoreOverview["store"] = null;
+    let error: string | null = null;
+
+    if (configured) {
+      const h = await bffGet<Health>("/api/dashboard/health");
+      if (h.ok && h.json) {
+        health = {
+          cmsProvider: h.json.cms_provider ?? null,
+          catalog: h.json.catalog ?? null,
+          mistral: h.json.mistral ?? null,
+        };
+      } else error = `Health endpoint vrátil ${h.status}.`;
+
+      const o = await bffGet<Overview>("/api/dashboard/overview");
+      if (o.ok && o.json) {
+        store = {
+          productCount: o.json.product_count ?? null,
+          lowStock: o.json.low_stock_count ?? null,
+          unavailable: o.json.unavailable_count ?? null,
+        };
+      } else if (!error) error = `Overview endpoint vrátil ${o.status}.`;
+    } else {
+      error = "Chýba STOREFRONT_BFF_BASE_URL alebo DASHBOARD_AGENT_SECRET.";
+    }
+
+    const { data: orderRows } = await supabaseAdmin
+      .from("wc_orders")
+      .select("id, number, total, currency, status, customer_name, wp_created_at")
+      .is("deleted_at", null)
+      .order("wp_created_at", { ascending: false })
+      .limit(500);
+
+    const rows = orderRows ?? [];
+    const byStatusMap = new Map<string, number>();
+    let revenue = 0;
+    let currency = "CZK";
+    for (const r of rows) {
+      const s = r.status ?? "unknown";
+      byStatusMap.set(s, (byStatusMap.get(s) ?? 0) + 1);
+      revenue += Number(r.total) || 0;
+      if (r.currency) currency = r.currency;
+    }
+
+    const [{ count: customers }, { count: products }] = await Promise.all([
+      supabaseAdmin
+        .from("wc_customers")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null),
+      supabaseAdmin
+        .from("wp_content")
+        .select("id", { count: "exact", head: true })
+        .eq("content_type", "product")
+        .is("deleted_at", null),
+    ]);
+
+    return {
+      bffConfigured: configured,
+      health,
+      store,
+      mirror: {
+        orders: rows.length,
+        revenue: Number(revenue.toFixed(2)),
+        currency,
+        customers: customers ?? 0,
+        products: products ?? 0,
+        byStatus: [...byStatusMap.entries()]
+          .map(([status, count]) => ({ status, count }))
+          .sort((a, b) => b.count - a.count),
+        recent: rows.slice(0, 8),
+      },
+      error,
+    };
   });

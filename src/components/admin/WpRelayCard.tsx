@@ -6,6 +6,7 @@ import { GlassPanel } from "./AdminShell";
 import {
   getWpSyncStatus,
   backfillWordPressContent,
+  backfillWooCommerce,
   type SyncStatus,
 } from "@/lib/wp-data.functions";
 import { listRecentWebhookEvents } from "@/lib/admin.functions";
@@ -139,12 +140,14 @@ type EventRow = {
 export function WpRelayCard() {
   const statusFn = useServerFn(getWpSyncStatus);
   const backfillFn = useServerFn(backfillWordPressContent);
+  const wooFn = useServerFn(backfillWooCommerce);
   const eventsFn = useServerFn(listRecentWebhookEvents);
 
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [wooBusy, setWooBusy] = useState<string | null>(null);
   const [endpoint, setEndpoint] = useState("");
 
   useEffect(() => {
@@ -189,6 +192,23 @@ export function WpRelayCard() {
     }
   }
 
+  async function runWoo(kinds: Array<"products" | "orders" | "customers">, label: string) {
+    setWooBusy(label);
+    try {
+      const r = await wooFn({ data: { kinds } });
+      for (const p of r.parts) {
+        if (p.error) toast.error(`${p.kind}: ${p.error}`);
+        else if (p.note) toast.info(`${p.kind}: ${p.note}`);
+        else toast.success(`${p.kind}: ${p.imported} záznamov`);
+      }
+      await refresh();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setWooBusy(null);
+    }
+  }
+
   const c = status?.counts;
 
   return (
@@ -227,6 +247,14 @@ export function WpRelayCard() {
           <Chip
             ok={!!status?.connectorConnected}
             label={status?.connectorConnected ? "Konektor pripojený" : "Konektor nepripojený"}
+          />
+          <Chip
+            ok={!!status?.bffConfigured}
+            label={
+              status?.bffConfigured
+                ? "Storefront API nastavené"
+                : "Chýba STOREFRONT_BFF_BASE_URL / DASHBOARD_AGENT_SECRET"
+            }
           />
           {status?.lastEventAt && (
             <span className="rounded-full bg-gm-bg-soft px-3 py-1 text-xs text-gm-text-muted">
@@ -267,6 +295,48 @@ export function WpRelayCard() {
           )}
           Obnoviť
         </button>
+      </div>
+
+      <div className="space-y-2">
+        <div className="text-xs uppercase tracking-wider text-gm-text-muted">
+          WooCommerce backfill
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <WooBtn
+            busy={wooBusy === "products"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["products"], "products")}
+          >
+            Načítať produkty
+          </WooBtn>
+          <WooBtn
+            busy={wooBusy === "orders"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["orders"], "orders")}
+          >
+            Načítať objednávky
+          </WooBtn>
+          <WooBtn
+            busy={wooBusy === "customers"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["customers"], "customers")}
+          >
+            Načítať zákazníkov
+          </WooBtn>
+          <WooBtn
+            busy={wooBusy === "all"}
+            disabled={!!wooBusy}
+            onClick={() => runWoo(["products", "orders", "customers"], "all")}
+            primary
+          >
+            Načítať všetko
+          </WooBtn>
+        </div>
+        <p className="text-xs text-gm-text-muted max-w-2xl">
+          Produkty sa načítajú z WordPress REST API cez konektor a doplnia sa o živé ceny a sklad zo
+          storefront API. Objednávky a zákazníci prichádzajú zo storefront API (zákazníci sa odvodia
+          z e-mailov v objednávkach).
+        </p>
       </div>
 
       {c && (
@@ -331,6 +401,39 @@ function Chip({ ok, label }: { ok: boolean; label: string }) {
     >
       {label}
     </span>
+  );
+}
+
+function WooBtn({
+  children,
+  onClick,
+  busy,
+  disabled,
+  primary,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  busy: boolean;
+  disabled?: boolean;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-full px-4 py-2 text-xs inline-flex items-center gap-2 disabled:opacity-50 ${
+        primary
+          ? "bg-gm-primary text-white hover:opacity-90"
+          : "border border-gm-border bg-white hover:bg-gm-bg-soft"
+      }`}
+    >
+      {busy ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Download className="w-3.5 h-3.5" />
+      )}
+      {children}
+    </button>
   );
 }
 

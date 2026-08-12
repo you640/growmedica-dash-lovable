@@ -10,18 +10,7 @@ import {
 } from "@/lib/admin.functions";
 import { testWordPressConnection, listWordPressPosts } from "@/lib/wordpress.functions";
 import { WpRelayCard } from "@/components/admin/WpRelayCard";
-import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Database,
-  Cloud,
-  Flame,
-  Sparkles,
-  Server,
-  Globe,
-  Webhook,
-} from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Database, Cloud, Sparkles, Globe } from "lucide-react";
 
 export const Route = createFileRoute("/admin/nastavenia")({
   head: () => ({
@@ -46,10 +35,7 @@ const PROVIDERS = [
   { id: "wordpress", label: "WordPress", icon: Globe },
   { id: "lovable_cloud", label: "Lovable Cloud", icon: Database },
   { id: "vercel", label: "Vercel", icon: Cloud },
-  { id: "firebase", label: "Firebase", icon: Flame },
   { id: "mistral_ai", label: "Mistral AI", icon: Sparkles },
-  { id: "gcp", label: "Google Cloud", icon: Server },
-  { id: "custom", label: "Custom Webhook", icon: Webhook },
 ] as const;
 
 type Tab = (typeof PROVIDERS)[number]["id"];
@@ -94,7 +80,7 @@ function SettingsPage() {
     <div>
       <SectionHeading
         title="Integration Hub"
-        subtitle="Pripojte WordPress, Lovable Cloud, Vercel, Firebase, Mistral, GCP a vlastné webhooky. Všetky secrets sú v UI maskované a uložené v Cloude."
+        subtitle="Aktívny stack GrowMedica: WordPress + WooCommerce, Lovable Cloud, Vercel a Mistral AI. Secrets sú uložené v Cloude a nikdy neopúšťajú server."
       />
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -393,19 +379,6 @@ const PROVIDER_SCHEMAS: Record<
       { key: "deploy_hook_url", label: "Deploy hook URL", secret: true },
     ],
   },
-  firebase: {
-    label: "Firebase",
-    description:
-      "Firebase config je v Lovable Cloud secretoch (FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_APP_ID, ADMIN_EMAILS). Tu nastavte voliteľný override.",
-    fields: [
-      { key: "auth_domain_override", label: "Auth domain override" },
-      {
-        key: "admin_emails_extra",
-        label: "Ďalšie admin e-maily (čiarkou oddelené)",
-        placeholder: "user@example.com, second@example.com",
-      },
-    ],
-  },
   mistral_ai: {
     label: "Mistral AI",
     description:
@@ -423,45 +396,6 @@ const PROVIDER_SCHEMAS: Record<
       },
       { key: "max_tokens", label: "Max tokens", placeholder: "2048" },
       { key: "temperature", label: "Temperature", placeholder: "0.3" },
-    ],
-  },
-  gcp: {
-    label: "Google Cloud",
-    description:
-      "Service account pre Google Cloud Storage / Vertex AI. Vložte celý service account JSON — uloží sa zašifrovane.",
-    fields: [
-      { key: "project_id", label: "GCP Project ID" },
-      { key: "bucket", label: "Default bucket" },
-      {
-        key: "service_account_json",
-        label: "Service account JSON",
-        secret: true,
-        textarea: true,
-      },
-    ],
-  },
-  wordpress: {
-    label: "WordPress",
-    description:
-      "Spojenie s WordPress REST API (napr. blog GrowMedica). Pre auth použite Application Password.",
-    fields: [
-      { key: "base_url", label: "Base URL", placeholder: "https://blog.example.com" },
-      { key: "username", label: "WP používateľ" },
-      { key: "app_password", label: "Application password", secret: true },
-    ],
-  },
-  custom: {
-    label: "Custom Webhook",
-    description:
-      "Vlastný relay endpoint, ktorému budeme posielať preposlané WordPress eventy (fan-out engine).",
-    fields: [
-      { key: "target_url", label: "Target URL", placeholder: "https://hooks.example.com/in" },
-      { key: "secret", label: "Shared secret (HMAC)", secret: true },
-      {
-        key: "events",
-        label: "Eventy (čiarkou oddelené)",
-        placeholder: "products/create,orders/create",
-      },
     ],
   },
 };
@@ -541,7 +475,7 @@ function GenericConfigCard({ providerId, onSaved }: { providerId: string; onSave
           {saving ? "Ukladám…" : "Uložiť konfiguráciu"}
         </button>
         <span className="text-xs text-gm-text-muted self-center">
-          Live API volania pre tento provider sa aktivujú vo Fáze 2 / 3.
+          Konfigurácia sa uloží do databázy; API kľúče patria do Cloud secretov.
         </span>
       </div>
     </GlassPanel>
